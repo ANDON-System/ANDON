@@ -1,9 +1,11 @@
 const express = require("express");
-const { getTeamDetails, updateTeamLeader } = require("../controllers/teamLeaderController");
+const { getAllTeamLeaders, assignTeamLeader, removeTeamLeader } = require("../controllers/teamLeaderController");
+const authMiddleware = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
-router.get("/team-details/:teamId", getTeamDetails);
-router.put("/update-leader/:leaderId", updateTeamLeader);
+router.get("/all", authMiddleware("admin"), getAllTeamLeaders);
+router.post("/assign", authMiddleware("admin"), assignTeamLeader);
+router.delete("/remove/:userId", authMiddleware("admin"), removeTeamLeader);
 
 module.exports = router;

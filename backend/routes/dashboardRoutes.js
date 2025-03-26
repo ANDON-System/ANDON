@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const Department = require("../models/Department");  // Adjust paths based on your structure
-const TeamLeader = require("../models/TeamLeader");
-const Issue = require("../models/Issue");
+const Department = require("../models/departmentModel");  // Adjust paths based on your structure
+const TeamLeader = require("../models/teamModel");
+const Issue = require("../models/issueModel");
 
 router.get("/dashboard", async (req, res) => {
     try {

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ function AdminDashboard() {
 
   return (
     <div>
+      <Sidebar />
       <h2>Welcome, Admin!</h2>
       <button onClick={handleLogout}>Logout</button>
     </div>

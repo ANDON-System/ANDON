@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
 
-function EmployeeDashboard() {
+function TeamLeaderDashboard() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -10,10 +11,11 @@ function EmployeeDashboard() {
 
   return (
     <div>
-      <h2>Welcome, Employee!</h2>
+      <Sidebar />
+      <h2>Welcome, Team Leader!</h2>
       <button onClick={handleLogout}>Logout</button>
     </div>
   );
 }
 
-export default EmployeeDashboard;
+export default TeamLeaderDashboard;
