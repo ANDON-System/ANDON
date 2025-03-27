@@ -11,7 +11,7 @@ import {
   Box,
 } from "@mui/material";
 
-const roles = ["admin", "department", "team_leader", "employee"];
+const roles = ["admin", "department", "team_leader", "employee", "operator"];
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -70,6 +70,9 @@ function Login() {
           break;
         case "employee":
           navigate("/employee-dashboard");
+          break;
+        case "operator":
+          navigate("/operator-dashboard");
           break;
         default:
           navigate("/dashboard");

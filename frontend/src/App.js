@@ -7,6 +7,7 @@ import DepartmentDashboard from "./pages/DepartmentDashboard";
 import TeamLeaderDashboard from "./pages/TeamLeaderDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import ManageTeamLeaders from "./pages/Department/ManageTeamLeaders";
+import OperatorDashboard from "./pages/Operator/OperatorDashboard";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/team-leader-dashboard" element={<TeamLeaderDashboard />} />
         <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
         <Route path="/manage-team" element={<ManageTeamLeaders/>} />
+        <Route path="/operator-dashboard" element={<OperatorDashboard/>}/>
       </Routes>
     </Router>
   );
