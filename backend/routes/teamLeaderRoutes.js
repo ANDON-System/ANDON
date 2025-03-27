@@ -1,6 +1,6 @@
 const express = require("express");
 const { getAllTeamLeaders, assignTeamLeader, removeTeamLeader } = require("../controllers/teamLeaderController");
-const authMiddleware = require("../middlewares/authMiddleware");
+const authMiddleware = require("../config/authMiddleware");
 
 const router = express.Router();
 
