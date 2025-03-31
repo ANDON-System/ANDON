@@ -69,7 +69,7 @@ function Login() {
           navigate("/team-leader-dashboard");
           break;
         case "employee":
-          navigate("/employee-dashboard");
+          navigate("/support-dashboard");
           break;
         case "operator":
           navigate("/operator-dashboard");
