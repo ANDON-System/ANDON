@@ -9,6 +9,8 @@ import EmployeeDashboard from "./pages/EmployeeDashboard";
 //import ManageTeamLeaders from "./pages/Department/TeamLeaderDashboard";
 import OperatorDashboard from "./pages/Operator/OperatorDashboard";
 import SupportDashboard from "./pages/SupportTeam/SupportDashboard";
+import ActiveIssues from "./pages/Operator/ActiveIssues";
+import ResolvedIssues from "./pages/Operator/ResolvedIssues";
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
         {/* <Route path="/manage-team" element={<ManageTeamLeaders/>} /> */}
         <Route path="/operator-dashboard" element={<OperatorDashboard/>}/>
         <Route path="/support-dashboard" element={<SupportDashboard/>}/>
+        <Route path="/active-issues" element={<ActiveIssues/>}/>
+        <Route path="/resolved-issues" element={<ResolvedIssues/>}/>
       </Routes>
     </Router>
   );
