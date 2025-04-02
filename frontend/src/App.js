@@ -4,13 +4,14 @@ import Login from "./components/Login";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import DepartmentDashboard from "./pages/DepartmentDashboard";
-import TeamLeaderDashboard from "./pages/Department/TeamLeaderDashboard";
+import TeamLeaderDashboard from "./pages/TeamLeader/TeamLeaderDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
-//import ManageTeamLeaders from "./pages/Department/TeamLeaderDashboard";
+import ManageTeamLeader from "./pages/Department/ManageTeamLeader";
 import OperatorDashboard from "./pages/Operator/OperatorDashboard";
 import SupportDashboard from "./pages/SupportTeam/SupportDashboard";
 import ActiveIssues from "./pages/Operator/ActiveIssues";
 import ResolvedIssues from "./pages/Operator/ResolvedIssues";
+
 
 function App() {
   return (
@@ -23,7 +24,7 @@ function App() {
         <Route path="/department-dashboard" element={<DepartmentDashboard />} />
         <Route path="/team-leader-dashboard" element={<TeamLeaderDashboard />} />
         <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
-        {/* <Route path="/manage-team" element={<ManageTeamLeaders/>} /> */}
+        <Route path="/manage-team" element={<ManageTeamLeader/>} />
         <Route path="/operator-dashboard" element={<OperatorDashboard/>}/>
         <Route path="/support-dashboard" element={<SupportDashboard/>}/>
         <Route path="/active-issues" element={<ActiveIssues/>}/>
