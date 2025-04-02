@@ -10,6 +10,8 @@ const teamLeaderRoutes = require("./routes/teamLeaderRoutes");
 const employeeRoutes = require("./routes/employeeRoutes");
 const issueRoutes = require("./routes/issueRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes"); // Import dashboard route
+const userRoutes = require("./routes/userRoutes");
+const teamRoutes = require("./routes/teamRoutes");
 
 const app = express();
 
@@ -25,6 +27,8 @@ app.use("/api/team-leader", teamLeaderRoutes);
 app.use("/api/employee", employeeRoutes);
 app.use("/api/issues", issueRoutes);
 app.use("/api/dashboard", dashboardRoutes); // Dashboard route added
+app.use("/api/users", userRoutes);
+app.use("/api/teams", teamRoutes);
 
 // Database Connection
 mongoose

@@ -1,9 +1,7 @@
 const mongoose = require("mongoose");
 
-const teamSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-  leader: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+const TeamSchema = new mongoose.Schema({
+  name: { type: String, required: true, unique: true }, // Team name (e.g., "Production Team")
 });
 
-module.exports = mongoose.model("Team", teamSchema);
+module.exports = mongoose.model("Team", TeamSchema);

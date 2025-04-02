@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
     Container, Typography, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, Paper, Button,
@@ -9,11 +10,7 @@ import DepartmentSidebar from "../../components/DepartmentSidebar";
 
 const ManageTeamLeaders = () => {
     const [teamLeaders, setTeamLeaders] = useState([]);
-    const [users, setUsers] = useState([
-        { _id: "101", name: "John Doe" },
-        { _id: "102", name: "Jane Smith" },
-        { _id: "103", name: "Mark Johnson" },
-    ]);
+    const [users, setUsers] = useState([]);  // Fetch from backend
     const [teams, setTeams] = useState([
         { _id: "201", name: "Production Team" },
         { _id: "202", name: "Quality Team" },
@@ -25,6 +22,29 @@ const ManageTeamLeaders = () => {
     const [selectedUser, setSelectedUser] = useState("");
     const [selectedTeam, setSelectedTeam] = useState("");
     const [editingLeader, setEditingLeader] = useState(null);
+   
+    // Fetch users from the backend
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const response = await axios.get("http://localhost:5000/api/users");
+                setUsers(response.data);
+            } catch (error) {
+                console.error("Error fetching users:", error);
+            }
+        };
+        fetchUsers();
+        fetchTeams();
+    }, []);
+
+    const fetchTeams = async () => {
+        try {
+            const response = await axios.get("/api/teams"); // Fetch teams from backend
+            setTeams(response.data); // Set teams in state
+        } catch (error) {
+            console.error("Error fetching teams:", error);
+        }
+    };
 
     const handleAssign = () => {
         if (!selectedUser || !selectedTeam) return alert("Please select both user and team!");
@@ -47,7 +67,7 @@ const ManageTeamLeaders = () => {
         } else {
             const newLeader = { _id: Date.now().toString(), name: user.name, team };
             setTeamLeaders(prevLeaders => [...prevLeaders, newLeader]);
-            alert("Team Leader assigned Successfully!");
+            alert("Team Leader assigned!");
         }
 
         setSelectedUser("");
