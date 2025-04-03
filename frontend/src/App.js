@@ -11,6 +11,8 @@ import OperatorDashboard from "./pages/Operator/OperatorDashboard";
 import SupportDashboard from "./pages/SupportTeam/SupportDashboard";
 import ActiveIssues from "./pages/Operator/ActiveIssues";
 import ResolvedIssues from "./pages/Operator/ResolvedIssues";
+import Issues from "./pages/SupportTeam/Issues";
+import MyAssignments from "./pages/SupportTeam/MyAssignment";
 
 
 function App() {
@@ -29,6 +31,8 @@ function App() {
         <Route path="/support-dashboard" element={<SupportDashboard/>}/>
         <Route path="/active-issues" element={<ActiveIssues/>}/>
         <Route path="/resolved-issues" element={<ResolvedIssues/>}/>
+        <Route path="/issues" element={<Issues/>}/>
+        <Route path="/my-assignments" element={<MyAssignments/>}/>
       </Routes>
     </Router>
   );

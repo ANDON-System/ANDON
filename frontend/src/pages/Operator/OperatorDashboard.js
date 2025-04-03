@@ -27,6 +27,9 @@ const OperatorDashboard = () => {
   const [issueDepartments, setIssueDepartments] = useState([]);
   const [issueDescription, setIssueDescription] = useState('');
   const [resolutionDescription, setResolutionDescription] = useState('');
+  const [issueSLA, setIssueSLA] = useState(0); // New state for SLA
+  const [machineId, setMachineId] = useState(''); // New state for Machine ID
+  const [issueTitle, setIssueTitle] = useState(''); // New state for Issue Title
 
   // Tab State
   const [tabValue, setTabValue] = useState(0);
@@ -73,8 +76,11 @@ const OperatorDashboard = () => {
 
   const createIssue = async (issueData) => {
     try {
-      const response = await axios.post("http://localhost:5000/api/issues", issueData);
-      setIssues(prevIssues => [...prevIssues, response.data]); // Add the new issue to the state
+      const response = await axios.post("http://localhost:5000/api/issues", {
+        ...issueData,
+        machine_id: machineId // Include the machine_id
+      });
+      setIssues(prevIssues => [...prevIssues, response.data]);
       setSnackbarMessage('New issue raised successfully.');
       setSnackbarOpen(true);
     } catch (error) {
@@ -107,13 +113,11 @@ const OperatorDashboard = () => {
   const handleResolveIssue = async () => {
     if (currentIssueToResolve && resolutionDescription) {
       await updateIssue(currentIssueToResolve._id, { status: 'Resolved', resolution: resolutionDescription }); // Use _id for MongoDB
-      setResolvedIssues(prevResolved => [...prevResolved, { ...currentIssueToResolve, resolution: resolutionDescription }]);
       setIssues(prevIssues => prevIssues.filter(issue => issue._id !== currentIssueToResolve._id)); // Use _id for comparison
       setCurrentIssueToResolve(null);
       setResolutionDescription('');
       setIsResolveModalOpen(false);
-      setSnackbarMessage(`Issue ${currentIssueToResolve.title} resolved.`);
-      setSnackbarOpen(true);
+      alert(`Issue ${currentIssueToResolve.title} resolved.`); // Alert message
       setNotifications(prev => [...prev, { id: Date.now(), message: `Issue ${currentIssueToResolve.title} resolved.`, timestamp: new Date().toLocaleString() }]); // Add notification
     }
   };
@@ -139,18 +143,26 @@ const OperatorDashboard = () => {
 
   // Issue Handling Functions
   const handleRaiseIssue = () => {
-    if (issueDepartments.length > 0 && issueDescription) {
+    if (issueDepartments.length > 0 && issueDescription && issueSLA > 0 && machineId && issueTitle) {
       createIssue({
+        title: issueTitle, // Include title in the issue data
         priority: issuePriority,
         departments: issueDepartments,
-        description: issueDescription
+        description: issueDescription,
+        sla: issueSLA // Include SLA in the issue data
       });
 
       // Reset modal state
       setIssuePriority('Low');
       setIssueDepartments([]);
       setIssueDescription('');
+      setIssueSLA(0); // Reset SLA
+      setMachineId(''); // Reset Machine ID
+      setIssueTitle(''); // Reset Title
       setIsIssueModalOpen(false);
+    } else {
+      setSnackbarMessage('Please fill all required fields.');
+      setSnackbarOpen(true);
     }
   };
 
@@ -206,7 +218,7 @@ const OperatorDashboard = () => {
                     fontSize: 10
                   }}
                 >
-                  {notifications.length}
+                  {notifications.length }
                 </Box>
               )}
             </IconButton>
@@ -254,7 +266,7 @@ const OperatorDashboard = () => {
                 ) : (
                   <Stack spacing={1}>
                     {notifications.map(notification => (
- <Box
+                      <Box
                         key={notification.id}
                         sx={{
                           backgroundColor: '#f0f0f0',
@@ -312,6 +324,15 @@ const OperatorDashboard = () => {
           <DialogTitle>Raise New Issue</DialogTitle>
           <DialogContent>
             <Stack spacing={3} sx={{ mt: 1 }}>
+              {/* Title Input Field */}
+              <TextField
+                label="Issue Title"
+                value={issueTitle}
+                onChange={(e) => setIssueTitle(e.target.value)}
+                fullWidth
+                variant="outlined"
+              />
+
               {/* Priority Selection */}
               <Box>
                 <Typography>Issue Priority</Typography>
@@ -358,6 +379,26 @@ const OperatorDashboard = () => {
                 fullWidth
                 variant="outlined"
               />
+
+              {/* SLA Input Field */}
+              <TextField
+                label="Time Limit (SLA in hours)"
+                type="number"
+                value={issueSLA}
+                onChange={(e) => setIssueSLA(e.target.value)}
+                fullWidth
+                variant="outlined"
+                inputProps={{ min: 0 }} // Prevent negative values
+              />
+
+              {/* Machine ID Input Field */}
+              <TextField
+                label="Machine ID"
+                value={machineId}
+                onChange={(e) => setMachineId(e.target.value)}
+                fullWidth
+                variant="outlined"
+              />
             </Stack>
           </DialogContent>
           <DialogActions>
@@ -366,9 +407,58 @@ const OperatorDashboard = () => {
               onClick={handleRaiseIssue}
               variant="contained"
               color="primary"
-              disabled={issueDepartments.length === 0 || !issueDescription}
+              disabled={issueDepartments.length === 0 || !issueDescription || issueSLA <= 0 || !machineId || !issueTitle}
             >
               Raise Issue
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Resolve Issue Modal */}
+        <Dialog
+          open={isResolveModalOpen}
+          onClose={() => setIsResolveModalOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Resolve Issue</DialogTitle>
+          <DialogContent>
+            {currentIssueToResolve && (
+              <Stack spacing={3} sx={{ mt: 1 }}>
+                <Typography variant="h6">
+                  Issue Details
+                </Typography>
+                <Typography>
+                  Priority: {currentIssueToResolve.priority}
+                </Typography>
+                <Typography>
+                  Departments: {currentIssueToResolve.departments ? currentIssueToResolve.departments.join(', ') : 'No departments assigned'}
+                </Typography>
+                <Typography>
+                  Description: {currentIssueToResolve.description}
+                </Typography>
+
+                <TextField
+                  label="Resolution Description"
+                  multiline
+                  rows={4}
+                  value={resolutionDescription}
+                  onChange={(e) => setResolutionDescription(e.target.value)}
+                  fullWidth
+                  variant="outlined"
+                />
+              </Stack>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsResolveModalOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleResolveIssue}
+              variant="contained"
+              color="primary"
+              disabled={!resolutionDescription}
+            >
+              Resolve Issue
             </Button>
           </DialogActions>
         </Dialog>
@@ -380,6 +470,8 @@ const OperatorDashboard = () => {
           sx={{ mb: 3 }}
         >
           <Tab label="Active Issues" />
+          <Tab label="Time Limit (SLA)" />
+          <Tab label="Machine ID" />
         </Tabs>
 
         {/* Issues Section */}
@@ -416,7 +508,7 @@ const OperatorDashboard = () => {
                         <Card
                           sx={{
                             backgroundColor: PRIORITY_COLORS[issue.priority].light,
-                            border: `1px solid ${PRIORITY_COLORS[issue .priority].main}`,
+                            border: `1px solid ${PRIORITY_COLORS[issue.priority].main}`,
                             height: '100%'
                           }}
                         >
@@ -441,6 +533,14 @@ const OperatorDashboard = () => {
 
                             <Typography variant="body2" sx={{ mb: 2 }}>
                               {issue.description}
+                            </Typography>
+
+                            <Typography variant="body2" sx={{ mb: 2 }}>
+                              <strong>SLA:</strong> {issue.sla} hours
+                            </Typography>
+
+                            <Typography variant="body2" sx={{ mb: 2 }}>
+                              <strong>Machine ID:</strong> {issue.machine_id}
                             </Typography>
 
                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -477,7 +577,8 @@ const OperatorDashboard = () => {
         </Grid>
 
         {/* Snackbar for notifications */}
-        <Snackbar open={snackbarOpen}
+        <Snackbar
+          open={snackbarOpen}
           autoHideDuration={6000}
           onClose={handleSnackbarClose}
           message={snackbarMessage}

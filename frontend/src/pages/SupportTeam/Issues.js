@@ -1,10 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Grid, Card, CardContent, Button, Chip, Stack, Alert, Dialog, DialogTitle, DialogContent, TextField, DialogActions, IconButton, Popover } from '@mui/material';
-import { CheckCircle as CheckCircleIcon, Warning as WarningIcon, Error as ErrorIcon, Notifications as NotificationsIcon, AccessTime as ClockIcon, Close as CloseIcon } from '@mui/icons-material';
-import OperatorSidebar from '../../components/OperatorSidebar';
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  Chip,
+  Stack,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  TextField,
+  DialogActions,
+  IconButton,
+  Popover
+} from '@mui/material';
+import {
+  CheckCircle as CheckCircleIcon,
+  Warning as WarningIcon,
+  Error as ErrorIcon,
+  Notifications as NotificationsIcon,
+  AccessTime as ClockIcon,
+  Close as CloseIcon
+} from '@mui/icons-material';
+import SupportSidebar from '../../components/SupportSidebar';
 import axios from 'axios';
 
-const ActiveIssues = () => {
+const Issues = () => {
   const [issues, setIssues] = useState([]); // For active issues
   const [workstationStatus, setWorkstationStatus] = useState('Green');
   const [notifications, setNotifications] = useState([]);
@@ -23,9 +47,6 @@ const ActiveIssues = () => {
   const [issueDepartments, setIssueDepartments] = useState([]);
   const [issueDescription, setIssueDescription] = useState('');
   const [resolutionDescription, setResolutionDescription] = useState('');
-  const [issueTitle, setIssueTitle] = useState(''); // New state for Issue Title
-  const [issueSLA, setIssueSLA] = useState(0); // New state for SLA
-  const [machineId, setMachineId] = useState(''); // New state for Machine ID
 
   // Priority Colors
   const PRIORITY_COLORS = {
@@ -43,12 +64,12 @@ const ActiveIssues = () => {
     'Maintenance Team'
   ];
 
-  // Fetch issues on component mount
+  // Fetch acknowledged issues on component mount
   useEffect(() => {
     const fetchIssues = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/issues");
-        setIssues(response.data.filter(issue => issue.status === "Open")); // Fetch only open issues
+        const response = await axios.get("http://localhost:5000/api/issues/acknowledged");
+        setIssues(response.data); // Fetch only acknowledged issues
       } catch (error) {
         console.error("Error fetching issues:", error);
       }
@@ -78,15 +99,8 @@ const ActiveIssues = () => {
 
   const createIssue = async (issueData) => {
     try {
-      const response = await axios.post("http://localhost:5000/api/issues", {
-        ...issueData,
-        title: issueTitle, // Include title in the issue data
-        sla: issueSLA, // Include SLA in the issue data
-        machine_id: machineId // Include machine_id in the issue data
-      });
+      const response = await axios.post("http://localhost:5000/api/issues", issueData);
       setIssues(prevIssues => [...prevIssues, response.data]); // Add the new issue to the state
-      setNotifications(prev => [...prev, { id: Date.now(), message: 'New issue raised successfully.', timestamp: new Date().toLocaleString() }]); // Add notification
-      alert('New issue raised successfully.'); // Alert message
     } catch (error) {
       console.error("Error creating issue:", error.response ? error.response.data : error.message);
     }
@@ -94,33 +108,43 @@ const ActiveIssues = () => {
 
   const updateIssue = async (id, newData) => {
     try {
-      const response = await axios.put(` http://localhost:5000/api/issues/${id}`, newData);
+      const response = await axios.put(`http://localhost:5000/api/issues/${id}`, newData);
       setIssues(prevIssues => prevIssues.map(issue => (issue._id === id ? response.data : issue))); // Use _id for comparison
     } catch (error) {
       console.error("Error updating issue:", error);
     }
   };
 
-  const acknowledgeIssue = async (id) => {
-    try {
-      const response = await axios.put(`http://localhost:5000/api/issues/acknowledge/${id}`);
-      setIssues(prevIssues => prevIssues.filter(issue => issue._id !== id));
-      setNotifications(prev => [...prev, { id: Date.now(), message: `Issue ${response.data.title} acknowledged.`, timestamp: new Date().toLocaleString() }]); // Add notification
-      alert(`Issue ${response.data.title} acknowledged.`); // Alert message
-    } catch (error) {
-      console.error("Error acknowledging issue:", error);
-    }
-  };
-
   const handleResolveIssue = async () => {
     if (currentIssueToResolve && resolutionDescription) {
-      await updateIssue(currentIssueToResolve._id, { status: 'Resolved', resolution: resolutionDescription }); // Use _id for MongoDB
-      setIssues(prevIssues => prevIssues.filter(issue => issue._id !== currentIssueToResolve._id)); // Use _id for comparison
+      await updateIssue(currentIssueToResolve._id, { status: 'Resolved', resolution: resolutionDescription }); // setIssues(prevIssues => prevIssues.filter(issue => issue._id !== currentIssueToResolve._id)); // Use _id for comparison
       setCurrentIssueToResolve(null);
       setResolutionDescription('');
       setIsResolveModalOpen(false);
       alert(`Issue ${currentIssueToResolve.title} resolved.`); // Alert message
       setNotifications(prev => [...prev, { id: Date.now(), message: `Issue ${currentIssueToResolve.title} resolved.`, timestamp: new Date().toLocaleString() }]); // Add notification
+    }
+  };
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      const response = await axios.put(`http://localhost:5000/api/issues/mark-as-read/${id}`);
+      setIssues(prevIssues => prevIssues.map(issue => (issue._id === id ? { ...issue, status: 'In Progress' } : issue)));
+      setNotifications(prev => [...prev, { id: Date.now(), message: `Issue ${response.data.title} marked as read.`, timestamp: new Date().toLocaleString() }]); // Add notification
+      alert(`Issue ${response.data.title} marked as read.`); // Alert message
+    } catch (error) {
+      console.error("Error marking issue as read:", error);
+    }
+  };
+
+  const handleEscalateIssue = async (id) => {
+    try {
+      const response = await axios.put(`http://localhost:5000/api/issues/escalate/${id}`);
+      setIssues(prevIssues => prevIssues.map(issue => (issue._id === id ? { ...issue, status: 'Escalated' } : issue)));
+      setNotifications(prev => [...prev, { id: Date.now(), message: `Issue ${response.data.title} escalated.`, timestamp: new Date().toLocaleString() }]); // Add notification
+      alert(`Issue ${response.data.title} escalated.`); // Alert message
+    } catch (error) {
+      console.error("Error escalating issue:", error);
     }
   };
 
@@ -140,7 +164,7 @@ const ActiveIssues = () => {
 
   // Issue Handling Functions
   const handleRaiseIssue = () => {
-    if (issueDepartments.length > 0 && issueDescription && issueTitle && issueSLA > 0 && machineId) {
+    if (issueDepartments.length > 0 && issueDescription) {
       createIssue({
         priority: issuePriority,
         departments: issueDepartments,
@@ -151,12 +175,9 @@ const ActiveIssues = () => {
       setIssuePriority('Low');
       setIssueDepartments([]);
       setIssueDescription('');
-      setIssueTitle(''); // Reset Title
-      setIssueSLA(0); // Reset SLA
-      setMachineId(''); // Reset Machine ID
       setIsIssueModalOpen(false);
-    } else {
-      alert('Please fill all required fields.'); // Alert message
+      alert('New issue raised successfully.'); // Alert message
+      setNotifications(prev => [...prev, { id: Date.now(), message: 'New issue raised successfully.', timestamp: new Date().toLocaleString() }]); // Add notification
     }
   };
 
@@ -170,7 +191,7 @@ const ActiveIssues = () => {
 
   return (
     <Box sx={{ display: "flex" }}>
-      <OperatorSidebar />
+      <SupportSidebar />
       <Box sx={{ flexGrow: 1, p: 3, backgroundColor: '#f4f6f8' }}>
         {/* Issue Raising Modal */}
         <Dialog
@@ -182,15 +203,6 @@ const ActiveIssues = () => {
           <DialogTitle>Raise New Issue</DialogTitle>
           <DialogContent>
             <Stack spacing={3} sx={{ mt: 1 }}>
-              {/* Title Input Field */}
-              <TextField
-                label="Issue Title"
-                value={issueTitle}
-                onChange={(e) => setIssueTitle(e.target.value)}
-                fullWidth
-                variant="outlined"
-              />
-
               {/* Priority Selection */}
               <Box>
                 <Typography>Issue Priority</Typography>
@@ -228,32 +240,12 @@ const ActiveIssues = () => {
               </Box>
 
               {/* Issue Description */}
-              <TextField
+ <TextField
                 label="Issue Description"
                 multiline
                 rows={4}
                 value={issueDescription}
                 onChange={(e) => setIssueDescription(e.target.value)}
-                fullWidth
-                variant="outlined"
-              />
-
-              {/* SLA Input Field */}
-              <TextField
-                label="Time Limit (SLA in hours)"
-                type="number"
-                value={issueSLA}
-                onChange={(e) => setIssueSLA(e.target.value)}
-                fullWidth
-                variant="outlined"
-                inputProps={{ min: 0 }} // Prevent negative values
-              />
-
-              {/* Machine ID Input Field */}
-              <TextField
-                label="Machine ID"
-                value={machineId}
-                onChange={(e) => setMachineId(e.target.value)}
                 fullWidth
                 variant="outlined"
               />
@@ -265,7 +257,7 @@ const ActiveIssues = () => {
               onClick={handleRaiseIssue}
               variant="contained"
               color="primary"
-              disabled={issueDepartments.length === 0 || !issueDescription || !issueTitle || issueSLA <= 0 || !machineId}
+              disabled={issueDepartments.length === 0 || !issueDescription}
             >
               Raise Issue
             </Button>
@@ -294,12 +286,6 @@ const ActiveIssues = () => {
                 </Typography>
                 <Typography>
                   Description: {currentIssueToResolve.description}
-                </Typography>
-                <Typography>
-                  SLA: {currentIssueToResolve.sla} hours
-                </Typography>
-                <Typography>
-                  Machine ID: {currentIssueToResolve.machine_id}
                 </Typography>
 
                 <TextField
@@ -330,7 +316,7 @@ const ActiveIssues = () => {
         {/* Dashboard Header with Notification Button */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4" gutterBottom>
-            Active Issues
+            Issues
           </Typography>
 
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -423,7 +409,7 @@ const ActiveIssues = () => {
                       <Box
                         key={notification.id}
                         sx={{
-                          backgroundColor: '#f0f0f0',
+                          backgroundColor: '#f0f0 f0',
                           p: 1,
                           borderRadius: 1
                         }}
@@ -483,14 +469,6 @@ const ActiveIssues = () => {
                           <strong>Departments:</strong> {issue.departments ? issue.departments.join(', ') : 'No departments assigned'}
                         </Typography>
 
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          <strong>SLA:</strong> {issue.sla} hours
-                        </Typography>
-
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          <strong>Machine ID:</strong> {issue.machine_id}
-                        </Typography>
-
                         <Typography variant="body2" sx={{ mb: 2 }}>
                           {issue.description}
                         </Typography>
@@ -499,11 +477,10 @@ const ActiveIssues = () => {
                           <Button
                             size="small"
                             variant="outlined"
-                            color="primary"
-                            sx={{ mr: 1 }}
-                            onClick={() => acknowledgeIssue(issue._id)}
+                            color="info"
+                            onClick={() => handleMarkAsRead(issue._id)}
                           >
-                            Acknowledge
+                            Mark as Read
                           </Button>
                           <Button
                             size="small"
@@ -515,6 +492,14 @@ const ActiveIssues = () => {
                             }}
                           >
                             Resolve
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            onClick={() => handleEscalateIssue(issue._id)}
+                          >
+                            Escalate
                           </Button>
                         </Box>
                       </CardContent>
@@ -530,4 +515,4 @@ const ActiveIssues = () => {
   );
 };
 
-export default ActiveIssues;
+export default Issues;
