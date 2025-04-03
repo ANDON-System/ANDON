@@ -10,7 +10,7 @@ exports.register = async (req, res) => {
     // Check if the user already exists
     const existingUser  = await User.findOne({ email });
     if (existingUser ) {
-      return res.status(400).json({ message: "User  already exists" });
+      return res.status(400).json({ message: "User already exists" });
     }
 
     // Hash the password
@@ -80,7 +80,7 @@ exports.getRole = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.params.email });
     if (!user) return res.status(404).json({ message: "User not found" });
-
+    
     res.json({ role: user.role });
   } catch (error) {
     res.status(500).json({ message: "Server error" });

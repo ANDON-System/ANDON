@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import {
-  AppBar, Toolbar, Typography, Container, Box, Tabs, Tab, Paper,
+  AppBar, Toolbar, Typography, Box, Paper,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Button, Dialog, DialogActions, DialogContent, DialogTitle,
   TextField, Select, MenuItem, FormControl, InputLabel,
-  IconButton, Grid, Card, CardContent, Divider, Tooltip
+  IconButton, Drawer, List, ListItem, ListItemIcon, ListItemText,
+  Divider, Stack
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -12,12 +13,18 @@ import {
   Edit as EditIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
-  Save as SaveIcon,
-  Search as SearchIcon
+  People as PeopleIcon,
+  Category as CategoryIcon,
+  Computer as ComputerIcon,
+  Apartment as ApartmentIcon,
+  History as HistoryIcon,
+  Logout as LogoutIcon,
+  Menu as MenuIcon
 } from '@mui/icons-material';
 
 function AdminDashboard() {
-  const [tabValue, setTabValue] = useState(0);
+  const [currentTab, setCurrentTab] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
   
   // Mock data for demonstration
   const mockUsers = [
@@ -67,9 +74,64 @@ function AdminDashboard() {
   const [currentItem, setCurrentItem] = useState({});
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
+  const drawerWidth = 240;
+
+  // Toggle drawer function - works for both mobile and desktop
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
   };
+
+  // Logout function
+  const handleLogout = () => {
+    // In a real application, this would clear auth tokens and redirect to login
+    alert("Logging out...");
+    // Simulate redirect to login page
+    window.location.href = "/";
+  };
+
+  // Navigation items for the sidebar
+  const navItems = [
+    { text: 'User  & Role Management', icon: <PeopleIcon />, index: 0 },
+    { text: 'Issue Categories & Rules', icon: <CategoryIcon />, index: 1 },
+    { text: 'Workstation Mapping', icon: <ComputerIcon />, index: 2 },
+    { text: 'Department Management', icon: <ApartmentIcon />, index: 3 },
+    { text: 'Historical Data & Logs', icon: <HistoryIcon />, index: 4 },
+    { text: 'Logout', icon: <LogoutIcon />, index: 5, action: handleLogout }
+  ];
+
+  const handleNavItemClick = (item) => {
+    if (item.action) {
+      item.action();
+    } else {
+      setCurrentTab(item.index);
+    }
+    setMobileOpen(false);
+  };
+
+  // Drawer content
+  const drawer = (
+    <div>
+      <Toolbar>
+        <Typography variant="h6" noWrap component="div">
+          Andon Admin
+        </Typography>
+      </Toolbar>
+      <Divider />
+      <List>
+        {navItems.map((item) => (
+          <ListItem 
+            button 
+            key={item.text}
+            onClick={() => handleNavItemClick(item)}
+            selected={currentTab === item.index}
+          >
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} />
+          </ListItem>
+        ))}
+      </List>
+    </div>
+  );
 
   // User management functions
   const openUserDialog = (user = {}) => {
@@ -78,7 +140,7 @@ function AdminDashboard() {
     setUserDialog(true);
   };
 
-  const saveUser = () => {
+  const saveUser  = () => {
     if (isEditing) {
       setUsers(users.map(u => u.id === currentItem.id ? currentItem : u));
     } else {
@@ -186,66 +248,87 @@ function AdminDashboard() {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
+    <Box sx={{ display: 'flex' }}>
+      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          {/* Menu button - visible on all screens */}
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap component="div">
             Andon System - Admin Dashboard
           </Typography>
         </Toolbar>
       </AppBar>
       
-      <Container maxWidth="xl" sx={{ mt: 4 }}>
-        <Paper sx={{ width: '100%', mb: 2 }}>
-          <Tabs value={tabValue} onChange={handleTabChange} aria-label="admin tabs">
-            <Tab label="User & Role Management" />
-            <Tab label="Issue Categories & Escalation Rules" />
-            <Tab label="Workstation Mapping" />
-            <Tab label="Department Management" />
-            <Tab label="Historical Data & Logs" />
-          </Tabs>
-        </Paper>
+      {/* Sidebar drawer - unified approach for both mobile and desktop */}
+      <Box
+        component="nav"
+        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        aria-label="dashboard navigation"
+      >
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+          }}
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+      
+      {/* Main content area */}
+      <Box
+        component="main"
+        sx={{ 
+          flexGrow: 1, 
+          p: 3, 
+          width: '100%'
+        }}
+      >
+        <Toolbar /> {/* This provides spacing below the app bar */}
         
-        {/* Tab 1: User & Role Management */}
-        {tabValue === 0 && (
-          <Paper sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h6">User & Role Management</Typography>
-              <Box>
+        {/* Tab 0: User & Role Management */}
+        {currentTab === 0 && (
+          <Paper sx={{ p: 2, width: '100%', minHeight: 'calc(100vh - 112px)' }}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>User  & Role Management</Typography>
+              <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                 <Button 
-                  variant="contained" 
-                  startIcon={<AddIcon />} 
-                  onClick={() => openUserDialog()}
-                >
-                  Add User
-                </Button>
-                <Button 
-                  sx={{ ml: 2 }} 
                   variant="outlined" 
                   startIcon={<DownloadIcon />}
                   onClick={() => exportData('users')}
                 >
                   Export Users
                 </Button>
-              </Box>
+              </Stack>
             </Box>
-            <TableContainer>
-              <Table>
+            <TableContainer sx={{ maxHeight: 'calc(100vh - 220px)', overflow: 'auto' }}>
+              <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Department</TableCell>
-                    <TableCell>Role</TableCell>
+                    <TableCell align="left">Name</TableCell>
+                    <TableCell align="left">Email</TableCell>
+                    <TableCell align="left">Department</TableCell>
+                    <TableCell align="left">Role</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.department}</TableCell>
-                      <TableCell>{user.role}</TableCell>
+                    <TableRow key={user.id} hover>
+                      <TableCell align="left">{user.name}</TableCell>
+                      <TableCell align="left">{user.email}</TableCell>
+                      <TableCell align="left">{user.department}</TableCell>
+                      <TableCell align="left">{user.role}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -254,44 +337,36 @@ function AdminDashboard() {
           </Paper>
         )}
         
-        {/* Tab 2: Issue Categories & Escalation Rules */}
-        {tabValue === 1 && (
-          <Paper sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h6">Issue Categories & Escalation Rules</Typography>
-              <Box>
+        {/* Tab 1: Issue Categories & Escalation Rules */}
+        {currentTab === 1 && (
+          <Paper sx={{ p: 2, width: '100%', minHeight: 'calc(100vh - 112px)' }}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>Issue Categories & Escalation Rules</Typography>
+              <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                 <Button 
-                  variant="contained" 
-                  startIcon={<AddIcon />} 
-                  onClick={() => openCategoryDialog()}
-                >
-                  Add Category
-                </Button>
-                <Button 
-                  sx={{ ml: 2 }} 
                   variant="outlined" 
                   startIcon={<DownloadIcon />}
                   onClick={() => exportData('categories')}
                 >
                   Export Categories
                 </Button>
-              </Box>
+              </Stack>
             </Box>
-            <TableContainer>
-              <Table>
+            <TableContainer sx={{ maxHeight: 'calc(100vh - 220px)', overflow: 'auto' }}>
+              <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Category Name</TableCell>
-                    <TableCell>Escalation Time (mins)</TableCell>
-                    <TableCell>Default Assignment</TableCell>
+                    <TableCell align="left">Category Name</TableCell>
+                    <TableCell align="left">Escalation Time (mins)</TableCell>
+                    <TableCell align="left">Default Assignment</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {issueCategories.map((category) => (
-                    <TableRow key={category.id}>
-                      <TableCell>{category.name}</TableCell>
-                      <TableCell>{category.escalationTime}</TableCell>
-                      <TableCell>{category.assignTo}</TableCell>
+                    <TableRow key={category.id} hover>
+                      <TableCell align="left">{category.name}</TableCell>
+                      <TableCell align="left">{category.escalationTime}</TableCell>
+                      <TableCell align="left">{category.assignTo}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -300,44 +375,36 @@ function AdminDashboard() {
           </Paper>
         )}
         
-        {/* Tab 3: Workstation Mapping */}
-        {tabValue === 2 && (
-          <Paper sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h6">Workstation Mapping</Typography>
-              <Box>
+        {/* Tab 2: Workstation Mapping */}
+        {currentTab === 2 && (
+          <Paper sx={{ p: 2, width: '100%', minHeight: 'calc(100vh - 112px)' }}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>Workstation Mapping</Typography>
+              <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                 <Button 
-                  variant="contained" 
-                  startIcon={<AddIcon />} 
-                  onClick={() => openWorkstationDialog()}
-                >
-                  Add Workstation
-                </Button>
-                <Button 
-                  sx={{ ml: 2 }} 
                   variant="outlined" 
                   startIcon={<DownloadIcon />}
                   onClick={() => exportData('workstations')}
                 >
                   Export Workstations
                 </Button>
-              </Box>
+              </Stack>
             </Box>
-            <TableContainer>
-              <Table>
+            <TableContainer sx={{ maxHeight: 'calc(100vh - 220px)', overflow: 'auto' }}>
+              <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Workstation Name</TableCell>
-                    <TableCell>Zone</TableCell>
-                    <TableCell>Supervisor</TableCell>
+                    <TableCell align="left">Workstation Name</TableCell>
+                    <TableCell align="left">Zone</TableCell>
+                    <TableCell align="left">Supervisor</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {workstations.map((station) => (
-                    <TableRow key={station.id}>
-                      <TableCell>{station.name}</TableCell>
-                      <TableCell>{station.zone}</TableCell>
-                      <TableCell>{station.supervisor}</TableCell>
+                    <TableRow key={station.id} hover>
+                      <TableCell align="left">{station.name}</TableCell>
+                      <TableCell align="left">{station.zone}</TableCell>
+                      <TableCell align="left">{station.supervisor}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -346,12 +413,12 @@ function AdminDashboard() {
           </Paper>
         )}
         
-        {/* Tab 4: Department Management - Keeping Edit/Delete functionality */}
-        {tabValue === 3 && (
-          <Paper sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h6">Department Management</Typography>
-              <Box>
+        {/* Tab 3: Department Management */}
+        {currentTab === 3 && (
+          <Paper sx={{ p: 2, width: '100%', minHeight: 'calc(100vh - 112px)' }}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>Department Management</Typography>
+              <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                 <Button 
                   variant="contained" 
                   startIcon={<AddIcon />} 
@@ -360,38 +427,39 @@ function AdminDashboard() {
                   Add Department
                 </Button>
                 <Button 
-                  sx={{ ml: 2 }} 
                   variant="outlined" 
                   startIcon={<DownloadIcon />}
                   onClick={() => exportData('departments')}
                 >
                   Export Departments
                 </Button>
-              </Box>
+              </Stack>
             </Box>
-            <TableContainer>
-              <Table>
+            <TableContainer sx={{ maxHeight: 'calc(100vh - 220px)', overflow: 'auto' }}>
+              <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Department Name</TableCell>
-                    <TableCell>Manager</TableCell>
-                    <TableCell>Location</TableCell>
+                    <TableCell align="left">Department Name</TableCell>
+                    <TableCell align="left">Manager</TableCell>
+                    <TableCell align="left">Location</TableCell>
                     <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {departments.map((department) => (
-                    <TableRow key={department.id}>
-                      <TableCell>{department.name}</TableCell>
-                      <TableCell>{department.manager}</TableCell>
-                      <TableCell>{department.location}</TableCell>
+                    <TableRow key={department.id} hover>
+                      <TableCell align="left">{department.name}</TableCell>
+                      <TableCell align="left">{department.manager}</TableCell>
+                      <TableCell align="left">{department.location}</TableCell>
                       <TableCell align="right">
-                        <IconButton size="small" onClick={() => openDepartmentDialog(department)}>
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton size="small" onClick={() => deleteDepartment(department.id)}>
-                          <DeleteIcon />
-                        </IconButton>
+                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                          <IconButton size="small" onClick={() => openDepartmentDialog(department)}>
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton size="small" onClick={() => deleteDepartment(department.id)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -401,12 +469,12 @@ function AdminDashboard() {
           </Paper>
         )}
         
-        {/* Tab 5: Historical Data & Logs */}
-        {tabValue === 4 && (
-          <Paper sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h6">Historical Data & System Logs</Typography>
-              <Box>
+        {/* Tab 4: Historical Data & Logs */}
+        {currentTab === 4 && (
+          <Paper sx={{ p: 2, width: '100%', minHeight: 'calc(100vh - 112px)' }}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>Historical Data & System Logs</Typography>
+              <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                 <Button 
                   variant="outlined" 
                   startIcon={<RefreshIcon />}
@@ -414,32 +482,31 @@ function AdminDashboard() {
                   Refresh
                 </Button>
                 <Button 
-                  sx={{ ml: 2 }} 
                   variant="outlined" 
                   startIcon={<DownloadIcon />}
                   onClick={() => exportData('logs')}
                 >
                   Export Logs
                 </Button>
-              </Box>
+              </Stack>
             </Box>
-            <TableContainer>
-              <Table>
+            <TableContainer sx={{ maxHeight: 'calc(100vh - 220px)', overflow: 'auto' }}>
+              <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Timestamp</TableCell>
-                    <TableCell>Action</TableCell>
-                    <TableCell>User</TableCell>
-                    <TableCell>Details</TableCell>
+                    <TableCell align="left">Timestamp</TableCell>
+                    <TableCell align="left">Action</TableCell>
+                    <TableCell align="left">User </TableCell>
+                    <TableCell align="left">Details</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {logs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell>{log.timestamp}</TableCell>
-                      <TableCell>{log.action}</TableCell>
-                      <TableCell>{log.user}</TableCell>
-                      <TableCell>{log.details}</TableCell>
+                    <TableRow key={log.id} hover>
+                      <TableCell align="left">{log.timestamp}</TableCell>
+                      <TableCell align="left">{log.action}</TableCell>
+                      <TableCell align="left">{log.user}</TableCell>
+                      <TableCell align="left">{log.details}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -447,12 +514,12 @@ function AdminDashboard() {
             </TableContainer>
           </Paper>
         )}
-      </Container>
+      </Box>
       
       {/* User Dialog */}
       <Dialog open={userDialog} onClose={() => setUserDialog(false)}>
         <DialogTitle>{isEditing ? 'Edit User' : 'Add New User'}</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ width: { xs: '300px', sm: '400px' } }}>
           <TextField
             margin="dense"
             label="Name"
@@ -499,14 +566,14 @@ function AdminDashboard() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setUserDialog(false)}>Cancel</Button>
-          <Button onClick={saveUser} variant="contained">Save</Button>
+          <Button onClick={saveUser } variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
       
       {/* Category Dialog */}
       <Dialog open={categoryDialog} onClose={() => setCategoryDialog(false)}>
         <DialogTitle>{isEditing ? 'Edit Category' : 'Add New Category'}</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ width: { xs: '300px', sm: '400px' } }}>
           <TextField
             margin="dense"
             label="Category Name"
@@ -544,7 +611,7 @@ function AdminDashboard() {
       {/* Workstation Dialog */}
       <Dialog open={workstationDialog} onClose={() => setWorkstationDialog(false)}>
         <DialogTitle>{isEditing ? 'Edit Workstation' : 'Add New Workstation'}</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ width: { xs: '300px', sm: '400px' } }}>
           <TextField
             margin="dense"
             label="Workstation Name"
@@ -586,7 +653,7 @@ function AdminDashboard() {
       {/* Department Dialog */}
       <Dialog open={departmentDialog} onClose={() => setDepartmentDialog(false)}>
         <DialogTitle>{isEditing ? 'Edit Department' : 'Add New Department'}</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ width: { xs: '300px', sm: '400px' } }}>
           <TextField
             margin="dense"
             label="Department Name"
