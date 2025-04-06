@@ -10,7 +10,8 @@ const {
   markAsRead,
   escalateIssue,
   getEscalatedIssues,
-  getInProgressIssues
+  getInProgressIssues,
+  updateIssue
 } = require("../controllers/issueController");
 
 const router = express.Router();
@@ -26,5 +27,6 @@ router.put("/:id", updateIssueStatus);
 router.put("/acknowledge/:id", acknowledgeIssue);
 router.put("/mark-as-read/:id", markAsRead); // This line is for marking as read
 router.put("/escalate/:id", escalateIssue); // This line is for escalating
+router.put("/:id", updateIssue); //updated issue
 
 module.exports = router;

@@ -13,6 +13,9 @@ import ActiveIssues from "./pages/Operator/ActiveIssues";
 import ResolvedIssues from "./pages/Operator/ResolvedIssues";
 import Issues from "./pages/SupportTeam/Issues";
 import MyAssignments from "./pages/SupportTeam/MyAssignment";
+import UserRoleManagement from "./pages/Admin/UserRoleManagement";
+import IssueCategory from "./pages/Admin/IssueCategory";
+import DepartmentManagement from "./pages/Admin/DepartmentManagement";
 
 
 function App() {
@@ -33,6 +36,9 @@ function App() {
         <Route path="/resolved-issues" element={<ResolvedIssues/>}/>
         <Route path="/issues" element={<Issues/>}/>
         <Route path="/my-assignments" element={<MyAssignments/>}/>
+        <Route path="/user-management" element={<UserRoleManagement/>}/>
+        <Route path="/issues-category" element={<IssueCategory/>}/>
+        <Route path="/department-manage" element={<DepartmentManagement/>}/>
       </Routes>
     </Router>
   );

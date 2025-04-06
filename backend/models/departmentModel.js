@@ -1,9 +1,11 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const departmentSchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true },
-  description: { type: String },
-  createdAt: { type: Date, default: Date.now }
-});
+const DepartmentSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    manager: { type: String, required: true },
+    email_id: { type: String, required: true, unique: true },
+    password: { type: String, required: true } // Ensure this field is defined
+}, { timestamps: true });
 
-module.exports = mongoose.model("Department", departmentSchema);
+const Department = mongoose.model('Department', DepartmentSchema);
+module.exports = Department;

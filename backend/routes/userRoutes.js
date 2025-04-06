@@ -1,17 +1,12 @@
-const express = require("express");
+// routes/userRoutes.js
+const express = require('express');
+const { getUsers, createUser , updateUser , deleteUser  } = require('../controllers/userController');
 const router = express.Router();
-const User = require("../models/userModel"); // Import User model
 
-// Get all employees
-router.get("/", async (req, res) => {
-    try {
-        const employees = await User.find({ role: "employee" }).select("_id name");
-        res.json(employees);
-    } catch (error) {
-        res.status(500).json({ message: "Server Error", error });
-    }
-});
+// Define routes
+router.get('/', getUsers);
+router.post('/', createUser );
+router.put('/:id', updateUser );
+router.delete('/:id', deleteUser );
 
 module.exports = router;
-
-

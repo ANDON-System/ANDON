@@ -128,3 +128,21 @@ exports.getCompletedIssues = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch completed issues", details: error.message });
   }
 };
+
+exports.updateIssue = async (req, res) => {
+  try {
+    const { title, description, priority, departments, machine_id, sla } = req.body;
+    const updatedIssue = await Issue.findByIdAndUpdate(req.params.id, {
+      title,
+      description,
+      priority,
+      departments,
+      machine_id,
+      sla
+    }, { new: true });
+    if (!updatedIssue) return res.status(404).json({ error: "Issue not found" });
+    res.json(updatedIssue);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update issue", details: error.message });
+  }
+};

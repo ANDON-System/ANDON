@@ -7,6 +7,7 @@ import axios from 'axios';
 const OperatorDashboard = () => {
   const [issues, setIssues] = useState([]); // For active issues
   const [resolvedIssues, setResolvedIssues] = useState([]); // For resolved issues
+  const [departments, setDepartments] = useState([]); // For departments
   const [notifications, setNotifications] = useState([]);
 
   // Snackbar State
@@ -41,16 +42,7 @@ const OperatorDashboard = () => {
     High: { main: '#f44336', light: '#ffebee' }
   };
 
-  const DEPARTMENTS = [
-    'Production Team',
-    'Quality Team',
-    'Manufacturing Team',
-    'Logistics Team',
-    'Safety Team',
-    'Maintenance Team'
-  ];
-
-  // Fetch issues on component mount
+  // Fetch issues and departments on component mount
   useEffect(() => {
     const fetchIssues = async () => {
       try {
@@ -70,8 +62,18 @@ const OperatorDashboard = () => {
       }
     };
 
+    const fetchDepartments = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/department");
+        setDepartments(response.data); // Fetch departments
+      } catch (error) {
+        console.error("Error fetching departments:", error);
+      }
+    };
+
     fetchIssues();
     fetchResolvedIssues();
+    fetchDepartments();
   }, []);
 
   const createIssue = async (issueData) => {
@@ -357,13 +359,13 @@ const OperatorDashboard = () => {
               <Box>
                 <Typography>Departments to Notify</Typography>
                 <Stack direction="row" flexWrap="wrap" gap={1}>
-                  {DEPARTMENTS.map(department => (
+                  {departments.map(department => (
                     <Chip
-                      key={department}
-                      label={department}
+                      key={department._id} // Assuming department has an _id field
+                      label={department.name} // Assuming department has a name field
                       clickable
-                      color={issueDepartments.includes(department) ? 'primary' : 'default'}
-                      onClick={() => handleDepartmentToggle(department)}
+                      color={issueDepartments.includes(department.name) ? 'primary' : 'default'}
+                      onClick={() => handleDepartmentToggle(department.name)}
                     />
                   ))}
                 </Stack>

@@ -5,7 +5,7 @@ const cors = require("cors");
 
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
-const deptRoutes = require("./routes/deptRoutes");
+const departmentRoutes = require("./routes/departmentRoutes");
 const teamLeaderRoutes = require("./routes/teamLeaderRoutes");
 const employeeRoutes = require("./routes/employeeRoutes");
 const issueRoutes = require("./routes/issueRoutes");
@@ -22,7 +22,7 @@ app.use(cors());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/department", deptRoutes);
+app.use("/api/department", departmentRoutes);
 app.use("/api/team-leader", teamLeaderRoutes);
 app.use("/api/employee", employeeRoutes);
 app.use("/api/issues", issueRoutes);
