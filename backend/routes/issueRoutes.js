@@ -11,7 +11,11 @@ const {
   escalateIssue,
   getEscalatedIssues,
   getInProgressIssues,
-  updateIssue
+  updateIssue,
+  createOldIssue,
+  getOldIssues,
+  getIssueById, // Import the new function
+  getUpdatedIssues
 } = require("../controllers/issueController");
 
 const router = express.Router();
@@ -19,6 +23,7 @@ const router = express.Router();
 router.post("/", reportIssue);
 router.get("/", getOpenIssues); // Fetch open issues
 router.get("/resolved", getResolvedIssues); // Fetch resolved issues
+router.get("/updated", getUpdatedIssues);   //fetch updated issues
 router.get("/completed", getCompletedIssues); // Fetch completed issues
 router.get("/acknowledged", getAcknowledgedIssues); // Fetch acknowledged issues
 router.get("/escalated", getEscalatedIssues); // Fetch escalated issues
@@ -27,6 +32,13 @@ router.put("/:id", updateIssueStatus);
 router.put("/acknowledge/:id", acknowledgeIssue);
 router.put("/mark-as-read/:id", markAsRead); // This line is for marking as read
 router.put("/escalate/:id", escalateIssue); // This line is for escalating
-router.put("/:id", updateIssue); //updated issue
+router.put("/:id", updateIssue); // Update issue
+
+router.post("/old", createOldIssue); // Add this line
+// Route to fetch old issues
+router.get("/old/:id", getOldIssues); // Fetch old issues related to a specific issue ID
+
+// Route to fetch an issue by ID
+router.get("/:id", getIssueById); // Ensure this route exists
 
 module.exports = router;

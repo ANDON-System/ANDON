@@ -1,8 +1,8 @@
 const Issue = require("../models/issueModel");
+const OldIssue = require("../models/oldIssueModel"); // Import the old issue model
 
 // Report a new issue
 exports.reportIssue = async (req, res) => {
-  console.log("Received issue data:", req.body); // Log the incoming data
   try {
     const newIssue = new Issue(req.body);
     await newIssue.save();
@@ -25,11 +25,10 @@ exports.getOpenIssues = async (req, res) => {
 // Get all resolved issues
 exports.getResolvedIssues = async (req, res) => {
   try {
-    const resolvedIssues = await Issue.find({ status: "Resolved" });
-    console.log("Resolved Issues from DB:", resolvedIssues); // Log the resolved issues
-    res.json(resolvedIssues);
+    const issues = await Issue.find({ status: 'Resolved' });
+    res.json(issues);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch resolved issues", details: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -45,11 +44,14 @@ exports.getAcknowledgedIssues = async (req, res) => {
 
 // Update issue status
 exports.updateIssueStatus = async (req, res) => {
+  
   try {
-    const { status, resolution } = req.body; // Expecting resolution in the request body
+    console.log("req",req.body);
+    const { status, title,description,priority,machine_id,sla,departments } = req.body; // Expecting resolution in the request body
+
     const updatedIssue = await Issue.findByIdAndUpdate(
       req.params.id,
-      { status, resolution }, // Update status and resolution
+      { status, title,description,priority,departments,machine_id,sla }, // Update status and resolution
       { new: true }
     );
     if (!updatedIssue) return res.status(404).json({ error: "Issue not found" });
@@ -109,7 +111,7 @@ exports.getEscalatedIssues = async (req, res) => {
   }
 };
 
-// In issueController.js
+// Get all in-progress issues
 exports.getInProgressIssues = async (req, res) => {
   try {
     const issues = await Issue.find({ status: 'In Progress' });
@@ -129,20 +131,90 @@ exports.getCompletedIssues = async (req, res) => {
   }
 };
 
+// Route to fetch old issues
+exports.getOldIssues = async (req, res) => {
+  try {
+    const oldIssues = await OldIssue.find({ originalIssueId: req.params.id });
+    res.json(oldIssues);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Update issue
 exports.updateIssue = async (req, res) => {
   try {
-    const { title, description, priority, departments, machine_id, sla } = req.body;
-    const updatedIssue = await Issue.findByIdAndUpdate(req.params.id, {
-      title,
-      description,
-      priority,
-      departments,
-      machine_id,
-      sla
-    }, { new: true });
-    if (!updatedIssue) return res.status(404).json({ error: "Issue not found" });
-    res.json(updatedIssue);
+    console.log("req",req.body);
+    
+    const { title, description, priority, departments, machine_id, sla, status } = req.body;
+
+    // Find the existing issue
+    const existingIssue = await Issue.findById(req.params.id);
+    if (!existingIssue) {
+      return res.status(404).json({ error: "Issue not found" });
+    }
+
+    // Save the old issue details to the OldIssue collection
+    const oldIssue = new OldIssue({
+      originalIssueId: existingIssue._id,
+      title: existingIssue.title,
+      description: existingIssue.description,
+      priority: existingIssue.priority,
+      status: existingIssue.status,
+      departments: existingIssue.departments,
+      resolution: existingIssue.resolution,
+      machine_id: existingIssue.machine_id,
+      sla: existingIssue.sla,
+      createdAt: existingIssue.createdAt,
+      updatedAt: existingIssue.updatedAt
+    });
+    await oldIssue.save();
+
+    // Update the existing issue
+    existingIssue.title = title;
+    existingIssue.description = description;
+    existingIssue.priority = priority;
+    existingIssue.departments = departments;
+    existingIssue.machine_id = machine_id;
+    existingIssue.sla = sla;
+    existingIssue.status = status;
+    existingIssue.updatedAt = Date.now(); // Update the timestamp
+
+    await existingIssue.save(); // Save the updated issue
+
+    res.json(existingIssue); // Return the updated issue
   } catch (error) {
     res.status(500).json({ error: "Failed to update issue", details: error.message });
+  }
+};
+
+// Get issue by ID
+exports.getIssueById = async (req, res) => {
+  try {
+    const issue = await Issue.findById(req.params.id);
+    if (!issue) return res.status(404).json({ error: "Issue not found" });
+    res.json(issue);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch issue", details: error.message });
+  }
+};
+
+// Route to create a new old issue
+exports.createOldIssue = async (req, res) => {
+  try {
+    const newOldIssue = new OldIssue(req.body);
+    await newOldIssue.save();
+    res.status(201).json(newOldIssue);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to create old issue", details: error.message });
+  }
+};
+
+exports.getUpdatedIssues = async (req, res) => {
+  try {
+    const issues = await Issue.find({ status: 'Updated' });
+    res.json(issues);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch in-progress issues", details: error.message });
   }
 };

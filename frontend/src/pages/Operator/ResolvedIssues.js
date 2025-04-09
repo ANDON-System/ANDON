@@ -13,22 +13,23 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton,
-  Popover,
   TextField,
   Paper,
-  Divider
+  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
 } from '@mui/material';
-import { CheckCircle as CheckCircleIcon, Warning as WarningIcon, Error as ErrorIcon, Notifications as NotificationsIcon, AccessTime as ClockIcon, Close as CloseIcon } from '@mui/icons-material';
+import { CheckCircle as CheckCircleIcon, Warning as WarningIcon, Error as ErrorIcon } from '@mui/icons-material';
 import OperatorSidebar from '../../components/OperatorSidebar';
 import axios from 'axios';
 
 const ResolvedIssues = () => {
   const [resolvedIssues, setResolvedIssues] = useState([]);
   const [workstationStatus, setWorkstationStatus] = useState('Green');
-  const [notifications, setNotifications] = useState([]);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const isNotificationOpen = Boolean(anchorEl);
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [currentIssueToRaise, setCurrentIssueToRaise] = useState(null);
@@ -36,8 +37,6 @@ const ResolvedIssues = () => {
   const [issueDepartments, setIssueDepartments] = useState([]);
   const [issueDescription, setIssueDescription] = useState('');
   const [issueDetails, setIssueDetails] = useState(null);
-  const [selectedIssue, setSelectedIssue] = useState(null);
-  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [error, setError] = useState('');
 
   const PRIORITY_COLORS = {
@@ -86,31 +85,46 @@ const ResolvedIssues = () => {
     updateWorkstationStatus();
   }, [resolvedIssues]);
 
-  const createIssue = async () => {
+  const updateIssue = async () => {
     if (issueDepartments.length > 0 && issueDescription) {
       try {
-        // Fetch machine_id and sla from the backend or set default values
-        const machineId = "426"; // Replace with actual logic to fetch machine_id
-        const sla = 24; // Replace with actual logic to fetch SLA
-  
-        const response = await axios.post("http://localhost:5000/api/issues", {
-          title: `Reopened: ${currentIssueToRaise.title}`,
+        const existingIssueResponse = await axios.get(`http://localhost:5000/api/issues/${currentIssueToRaise._id}`);
+        const existingIssue = existingIssueResponse.data;
+
+        await axios.post(`http://localhost:5000/api/issues/old`, {
+          originalIssueId: existingIssue._id,
+          title: existingIssue.title,
+          description: existingIssue.description,
+          priority: existingIssue.priority,
+          status: existingIssue.status,
+          departments: existingIssue.departments,
+          resolution: existingIssue.resolution,
+          machine_id: existingIssue.machine_id,
+          sla: existingIssue.sla,
+          createdAt: existingIssue.createdAt,
+          updatedAt: existingIssue.updatedAt
+        });
+
+        const updatedIssueData = {
+          title: currentIssueToRaise.title,
           description: issueDescription,
           priority: issuePriority,
           departments: issueDepartments,
-          machine_id: machineId, // Include machine_id
-          sla: sla // Include SLA
-        });
-  
-        setResolvedIssues(prev => [...prev, response.data]);
+          machine_id: currentIssueToRaise.machine_id,
+          sla: currentIssueToRaise.sla,
+          status: "Updated"
+        };
+
+        const response = await axios.put(`http://localhost:5000/api/issues/${currentIssueToRaise._id}`, updatedIssueData);
+        console.log("Response", response);
+        setResolvedIssues(prev => prev.map(issue => issue._id === response.data._id ? response.data : issue));
         setIsIssueModalOpen(false);
         setIssueDescription('');
         setIssueDepartments([]);
-        alert('New issue raised successfully.');
+        alert('Issue updated successfully.');
       } catch (error) {
-        const errorMessage = error.response ? error.response.data.details || error.message : error.message;
-        console.error("Error creating issue:", errorMessage);
-        setError("Failed to raise issue: " + errorMessage);
+        console.error("Error updating issue:", error);
+        setError("Failed to update issue: " + (error.response ? error.response .data.details || error.message : error.message));
       }
     } else {
       setError("Please fill in all required fields.");
@@ -120,24 +134,26 @@ const ResolvedIssues = () => {
   const fetchIssueDetails = async (issueId) => {
     try {
       const response = await axios.get(`http://localhost:5000/api/issues/${issueId}`);
-      setIssueDetails(response.data);
+      const oldResponse = await axios.get(`http://localhost:5000/api/issues/old/${issueId}`);
+      const oldIssuesData = oldResponse.data.length > 0 ? oldResponse.data : [];
+      setIssueDetails({ new: response.data, old: oldIssuesData });
       setIsDetailsModalOpen(true);
     } catch (error) {
-      console.error("Error fetching issue details:", error.response ? error.response.data : error.message);
+      console.error("Error fetching issue details:", error);
+      setError("Failed to fetch issue details: " + error.message);
     }
   };
 
-  const handleNotificationClick = (event) => {
-    setAnchorEl(event.currentTarget);
+  const handleViewIssue = (issue) => {
+    setCurrentIssueToRaise(issue);
+    setIssuePriority(issue.priority);
+    setIssueDepartments(issue.departments);
+    setIssueDescription(issue.description);
+    setIsIssueModalOpen(true);
   };
 
-  const handleNotificationClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleClearNotifications = () => {
-    setNotifications([]);
-    handleNotificationClose();
+  const handleViewDetails = (issue) => {
+    fetchIssueDetails(issue._id);
   };
 
   const handleDepartmentToggle = (department) => {
@@ -148,16 +164,6 @@ const ResolvedIssues = () => {
     );
   };
 
-  const handleViewIssue = (issue) => {
-    setCurrentIssueToRaise(issue);
-    setIsIssueModalOpen(true);
-  };
-
-  const handleViewDetails = (issue) => {
-    setSelectedIssue(issue);
-    setDetailsDialogOpen(true);
-  };
-
   return (
     <Box sx={{ display: "flex" }}>
       <OperatorSidebar />
@@ -166,119 +172,19 @@ const ResolvedIssues = () => {
           <Typography variant="h4" gutterBottom>
             Resolved Issues
           </Typography>
-
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Chip
-              icon={
-                workstationStatus === 'Green' ? <CheckCircleIcon color="success" /> :
-                  workstationStatus === 'Yellow' ? <WarningIcon color="warning" /> :
-                    <ErrorIcon color="error" />
-              }
-              label={`${workstationStatus} Status`}
-              color={
-                workstationStatus === 'Green' ? 'success' :
-                  workstationStatus === 'Yellow' ? 'warning' : 'error'
-              }
-              variant="outlined"
-              sx={{ mr: 2 }}
-            />
-
-            <IconButton
-              color="primary"
-              onClick={handleNotificationClick}
-              sx={{ position: 'relative' }}
-            >
-              <NotificationsIcon />
-              {notifications.length > 0 && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    right: 0,
-                    backgroundColor: 'red',
-                    color: 'white',
-                    borderRadius: '50%',
-                    width: 16,
-                    height: 16,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 10
-                  }}
-                >
-                  {notifications.length}
-                </Box>
-              )}
-            </IconButton>
-
-            <Popover
-              open={isNotificationOpen}
-              anchorEl={anchorEl}
-              onClose={handleNotificationClose}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right',
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-            >
-              <Box sx={{
-                width: 300,
-                maxHeight: 400,
-                overflow: 'auto',
-                p: 2
-              }}>
-                <Box sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  mb: 2
-                }}>
-                  <Typography variant="h6">Notifications</Typography>
-                  <IconButton
-                    size="small"
-                    onClick={handleClearNotifications}
-                    disabled={notifications.length === 0}
-                  >
-                    <CloseIcon />
-                  </IconButton>
-                </Box>
-
-                {notifications.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    No new notifications
-                  </Typography>
-                ) : (
-                  <Stack spacing={1}>
-                    {notifications.map(notification => (
-                      <Box
-                        key={notification.id}
-                        sx={{
-                          backgroundColor: '#f0f0f0',
-                          p: 1,
-                          borderRadius: 1
-                        }}
-                      >
-                        <Typography variant="body2">
-                          {notification.message}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          <ClockIcon sx={{
-                            fontSize: 'small',
-                            mr: 1,
-                            verticalAlign: 'middle'
-                          }} />
-                          {notification.timestamp}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Stack>
-                )}
-              </Box>
-            </Popover>
-          </Box>
+          <Chip
+            icon={
+              workstationStatus === 'Green' ? <CheckCircleIcon color="success" /> :
+                workstationStatus === 'Yellow' ? <WarningIcon color="warning" /> :
+                  <ErrorIcon color="error" />
+            }
+            label={`${workstationStatus} Status`}
+            color={
+              workstationStatus === 'Green' ? 'success' :
+                workstationStatus === 'Yellow' ? 'warning' : 'error'
+            }
+            variant="outlined"
+          />
         </Box>
 
         <Grid container spacing={3}>
@@ -336,10 +242,7 @@ const ResolvedIssues = () => {
                             size="small"
                             variant="contained"
                             color="primary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewDetails(issue);
-                            }}
+                            onClick={() => handleViewDetails(issue)}
                           >
                             View Details
                           </Button>
@@ -354,53 +257,136 @@ const ResolvedIssues = () => {
         </Grid>
 
         <Dialog
-          open={detailsDialogOpen}
-          onClose={() => setDetailsDialogOpen(false)}
+          open={isDetailsModalOpen}
+          onClose={() => setIsDetailsModalOpen(false)}
           fullWidth
           maxWidth="md"
         >
-          <DialogTitle>Issue Details</DialogTitle>
+          <DialogTitle> Issue Details</DialogTitle>
           <DialogContent>
-            <Paper elevation={2} sx={{ p: 3 }}>
-              <Typography variant="h6">Issue ID: #{selectedIssue?._id}</Typography>
+            <TableContainer component={Paper}>
+ <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell><strong>Field</strong></TableCell>
+                    <TableCell><strong>Current Value</strong></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {issueDetails && (
+                    <>
+                      <TableRow>
+                        <TableCell>Issue ID</TableCell>
+                        <TableCell>#{issueDetails.new?._id}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Description</TableCell>
+                        <TableCell>{issueDetails.new?.description}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Priority</TableCell>
+                        <TableCell>{issueDetails.new?.priority}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Status</TableCell>
+                        <TableCell>{issueDetails.new?.status}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Departments</TableCell>
+                        <TableCell>{issueDetails.new?.departments.join(', ') || 'No departments assigned'}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Created At</TableCell>
+                        <TableCell>{new Date(issueDetails.new?.createdAt).toLocaleString()}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Updated At</TableCell>
+                        <TableCell>{new Date(issueDetails.new?.updatedAt).toLocaleString()}</TableCell>
+                      </TableRow>
+                    </>
+                  )}
+                </TableBody>
+              </Table>
               <Divider sx={{ my: 2 }} />
-              <Typography variant="body1" paragraph>
-                <strong>Original Description:</strong> {selectedIssue?.description}
-              </Typography>
-              <Typography variant="body1" paragraph>
-                <strong>Updated Description:</strong> {issueDescription}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Priority :</strong> {selectedIssue?.priority}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Status:</strong> {selectedIssue?.status}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Assignee:</strong> {selectedIssue?.assignee || 'Unassigned'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Created At:</strong> {new Date(selectedIssue?.createdAt).toLocaleString()}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Updated At:</strong> {new Date(selectedIssue?.updatedAt).toLocaleString()}
-              </Typography>
-            </Paper>
+              <Typography variant="h6">Old Issue Details</Typography>
+              {issueDetails.old.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">No old details available.</Typography>
+              ) : (
+                <TableContainer component={Paper}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell><strong>Field</strong></TableCell>
+                        <TableCell><strong>Old Value</strong></TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {issueDetails.old.map((oldIssue, index) => (
+                        <React.Fragment key={index}>
+                          <TableRow>
+                            <TableCell>Old Description</TableCell>
+                            <TableCell>{oldIssue.description}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Old Priority</TableCell>
+                            <TableCell>{oldIssue.priority}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Old Status</TableCell>
+                            <TableCell>{oldIssue.status}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Old Departments</TableCell>
+                            <TableCell>{oldIssue.departments.join(', ') || 'No departments assigned'}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Old Created At</TableCell>
+                            <TableCell>{new Date(oldIssue.createdAt).toLocaleString()}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Old Updated At</TableCell>
+                            <TableCell>{new Date(oldIssue.updatedAt).toLocaleString()}</TableCell>
+                          </TableRow>
+                          <Divider sx={{ my: 1 }} />
+                        </React.Fragment>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </TableContainer>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setDetailsDialogOpen(false)}>Close</Button>
+            <Button onClick={() => setIsDetailsModalOpen(false)}>Close</Button>
           </DialogActions>
         </Dialog>
 
-        <Dialog
-          open={isIssueModalOpen}
+        <Dialog open={isIssueModalOpen}
           onClose={() => setIsIssueModalOpen(false)}
           maxWidth="md"
           fullWidth
         >
-          <DialogTitle> Raise New Issue</DialogTitle>
+          <DialogTitle>Update Issue</DialogTitle>
           <DialogContent>
             <Stack spacing={3} sx={{ mt: 1 }}>
+              <Box>
+                <Typography>Machine ID</Typography>
+                <TextField
+                  value={currentIssueToRaise?.machine_id}
+                  disabled
+                  fullWidth
+                  variant="outlined"
+                />
+              </Box>
+              <Box>
+                <Typography>SLA</Typography>
+                <TextField
+                  value={currentIssueToRaise?.sla}
+                  disabled
+                  fullWidth
+                  variant="outlined"
+                />
+              </Box>
               <Box>
                 <Typography>Issue Priority</Typography>
                 <Stack direction="row" spacing={2}>
@@ -439,7 +425,7 @@ const ResolvedIssues = () => {
                 label="Issue Description"
                 multiline
                 rows={4}
-                value={ issueDescription}
+                value={issueDescription}
                 onChange={(e) => setIssueDescription(e.target.value)}
                 fullWidth
                 variant="outlined"
@@ -450,12 +436,12 @@ const ResolvedIssues = () => {
           <DialogActions>
             <Button onClick={() => setIsIssueModalOpen(false)}>Cancel</Button>
             <Button
-              onClick={createIssue}
+              onClick={updateIssue}
               variant="contained"
               color="primary"
               disabled={issueDepartments.length === 0 || !issueDescription}
             >
-              Raise Issue
+              Update Issue
             </Button>
           </DialogActions>
         </Dialog>

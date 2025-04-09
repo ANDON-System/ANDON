@@ -66,8 +66,9 @@ const SupportDashboard = () => {
   const fetchIssues = async () => {
     setLoading(true); // Set loading to true
     try {
-      const [acknowledgedResponse, escalatedResponse, inProgressResponse, resolvedResponse] = await Promise.all([
+      const [acknowledgedResponse, escalatedResponse, inProgressResponse, resolvedResponse, updatedResponse] = await Promise.all([
         axios.get('http://localhost:5000/api/issues/acknowledged'), // Fetch acknowledged issues
+        axios.get('http://localhost:5000/api/issues/updated'), // Fetch updated issues
         axios.get('http://localhost:5000/api/issues/escalated'), // Fetch escalated issues
         axios.get('http://localhost:5000/api/issues/in-progress'), // Fetch in-progress issues
         axios.get('http://localhost:5000/api/issues/completed') // Fetch completed issues
@@ -76,11 +77,12 @@ const SupportDashboard = () => {
         ...acknowledgedResponse.data,
         ...escalatedResponse.data,
         ...inProgressResponse.data,
-        ...resolvedResponse.data // Include resolved issues
+        ...resolvedResponse.data,
+        ...updatedResponse.data // Include updated issues
       ];
       setIssues(allIssues);
       setFilteredIssues(allIssues); // Initialize filtered issues
-
+  
       // Calculate counts
       setNewIssuesCount(acknowledgedResponse.data.length);
       setInProgressCount(inProgressResponse.data.length);
@@ -102,7 +104,7 @@ const SupportDashboard = () => {
     const value = event.target.value;
     setSearchTerm(value);
 
-    // Filter issues based on search term
+    // Filter issues based on search term 
     const filtered = issues.filter(issue => issue.description.toLowerCase().includes(value.toLowerCase()));
     setFilteredIssues(filtered);
   };
@@ -145,6 +147,8 @@ const SupportDashboard = () => {
         return <ErrorIcon color="error" />;
       case 'Completed':
         return <CheckCircleIcon color="success" />;
+      case 'Updated':
+        return <Chip label="New" color="error" size="small" />;
       default:
         return <ErrorIcon color="error" />;
     }
@@ -214,7 +218,7 @@ const SupportDashboard = () => {
           issue._id === selectedIssue._id ? { ...issue, status: 'Escalated', escalationRecipient, escalationReason } : issue
         ));
         setFilteredIssues(prevIssues => prevIssues.map(issue =>
-          issue._id === selectedIssue._id ? { ...issue, status: 'Escalated', escalationRecipient, escalationReason } : issue
+          issue._id === selectedIssue._id ? { ...issue , status: 'Escalated', escalationRecipient, escalationReason } : issue
         ));
         alert(`Issue #${selectedIssue._id} has been escalated.`);
         setEscalateDialogOpen(false);
@@ -225,9 +229,16 @@ const SupportDashboard = () => {
   };
 
   // Handle View Details button click
-  const handleViewDetails = (issue) => {
-    setSelectedIssue(issue);
-    setDetailsDialogOpen(true);
+  const handleViewDetails = async (issue) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/issues/${issue._id}`);
+      const oldResponse = await axios.get(`http://localhost:5000/api/issues/old/${issue._id}`);
+      const oldIssuesData = oldResponse.data.length > 0 ? oldResponse.data : [];
+      setSelectedIssue({ ...response.data, oldIssues: oldIssuesData });
+      setDetailsDialogOpen(true);
+    } catch (error) {
+      console.error("Error fetching issue details:", error);
+    }
   };
 
   return (
@@ -303,7 +314,7 @@ const SupportDashboard = () => {
 
         <Typography variant="h6" sx={{ mb: 2 }}>Recent Issues</Typography>
         <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }}>
+          <Table sx={{ minWidth:  650 }}>
             <TableHead>
               <TableRow sx={{ bgcolor: '#f5f5f5' }}>
                 <TableCell>ID</TableCell>
@@ -356,8 +367,19 @@ const SupportDashboard = () => {
                     <TableCell>{issue.sla}</TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 1 }}>
-                        {issue.status === 'Acknowledged' ? (
+                        {issue.status === 'Acknowledged' || issue.status === 'Updated' ? (
                           <>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewDetails(issue);
+                            }}
+                          >
+                            View Details
+                          </Button>
                             <Button
                               size="small"
                               variant="contained"
@@ -462,7 +484,8 @@ const SupportDashboard = () => {
             </Box>
           </DialogTitle>
           <DialogContent dividers>
-            <Grid container spacing={3}>
+            <Grid 
+            container spacing={3}>
               <Grid item xs={12}>
                 <Typography variant="subtitle1" gutterBottom>Description</Typography>
                 <Typography variant="body1" paragraph>
@@ -527,6 +550,35 @@ const SupportDashboard = () => {
               <Typography variant="body2" color="text.secondary">
                 <strong>Updated At:</strong> {new Date(selectedIssue?.updatedAt).toLocaleString()}
               </Typography>
+              {selectedIssue?.oldIssues && selectedIssue.oldIssues.length > 0 && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="h6">Old Issue Details</Typography>
+                  {selectedIssue.oldIssues.map((oldIssue, index) => (
+                    <Box key={index} sx={{ mb: 2 }}>
+                      <Typography variant="body1" paragraph>
+                        <strong>Old Description:</strong> {oldIssue.description}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Old Priority:</strong> {oldIssue.priority}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Old Status:</strong> {oldIssue.status}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Old Departments:</strong> {oldIssue.departments.join(', ') || 'No departments assigned'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Old Created At:</strong> {new Date(oldIssue.createdAt).toLocaleString()}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Old Updated At:</strong> {new Date(oldIssue.updatedAt).toLocaleString()}
+                      </Typography>
+                      <Divider sx={{ my: 1 }} />
+                    </Box>
+                  ))}
+                </>
+              )}
             </Paper>
           </DialogContent>
           <DialogActions>
@@ -551,7 +603,7 @@ const SupportDashboard = () => {
               >
                 <MenuItem value="Team Lead">Team Lead</MenuItem>
                 <MenuItem value="Department Manager">Department Manager</MenuItem>
-                <MenuItem value="Senior Management">Senior Management</MenuItem>
+                <MenuItem Item value="Senior Management">Senior Management</MenuItem>
               </Select>
             </FormControl>
             <TextField
