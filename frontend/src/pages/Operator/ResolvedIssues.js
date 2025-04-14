@@ -124,7 +124,7 @@ const ResolvedIssues = () => {
         alert('Issue updated successfully.');
       } catch (error) {
         console.error("Error updating issue:", error);
-        setError("Failed to update issue: " + (error.response ? error.response .data.details || error.message : error.message));
+        setError("Failed to update issue: " + (error.response ? error.response.data.details || error.message : error.message));
       }
     } else {
       setError("Please fill in all required fields.");
@@ -257,110 +257,84 @@ const ResolvedIssues = () => {
         </Grid>
 
         <Dialog open={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} fullWidth maxWidth="md">
-  <DialogTitle> Issue Details</DialogTitle>
-  <DialogContent>
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell><strong>Field</strong></TableCell>
-            <TableCell><strong>Current Value</strong></TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {issueDetails ? ( // Check if issueDetails is not null
-            <>
-              <TableRow>
-                <TableCell>Issue ID</TableCell>
-                <TableCell>#{issueDetails.new?._id}</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Description</TableCell>
-                <TableCell>{issueDetails.new?.description}</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Priority</TableCell>
-                <TableCell>{issueDetails.new?.priority}</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Status</TableCell>
-                <TableCell>{issueDetails.new?.status}</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Departments</TableCell>
-                <TableCell>{issueDetails.new?.departments.join(', ') || 'No departments assigned'}</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Created At</TableCell>
-                <TableCell>{new Date(issueDetails.new?.createdAt).toLocaleString()}</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Updated At</TableCell>
-                <TableCell>{new Date(issueDetails.new?.updatedAt).toLocaleString()}</TableCell>
-              </TableRow>
-            </>
-          ) : (
-            <TableRow>
-              <TableCell colSpan={2}>Loading issue details...</TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-      <Divider sx={{ my: 2 }} />
-      <Typography variant="h6">Old Issue Details</Typography>
-      {issueDetails && issueDetails.old.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">No old details available.</Typography>
-      ) : (
-        issueDetails && (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell><strong>Field</strong></TableCell>
-                  <TableCell><strong>Old Value</strong></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {issueDetails.old.map((oldIssue, index) => (
-                  <React.Fragment key={index}>
+          <DialogTitle>Issue Details</DialogTitle>
+          <DialogContent>
+            <Box sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#f9f9f9' }}>
+              <Typography variant="h6">Current Issue Details</Typography>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
                     <TableRow>
-                      <TableCell>Old Description</TableCell>
-                      <TableCell>{oldIssue.description}</TableCell>
+                      <TableCell><strong>Issue ID</strong></TableCell>
+                      <TableCell><strong>Description</strong></TableCell>
+                      <TableCell><strong>Priority</strong></TableCell>
+                      <TableCell><strong>Status</strong></TableCell>
+                      <TableCell><strong>Departments</strong></TableCell>
+                      <TableCell><strong>Created At</strong></TableCell>
+                      <TableCell><strong>Updated At</strong></TableCell>
                     </TableRow>
-                    <TableRow>
-                      <TableCell>Old Priority</TableCell>
-                      <TableCell>{oldIssue.priority}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Old Status</TableCell>
-                      <TableCell>{oldIssue.status}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Old Departments</TableCell>
-                      <TableCell>{oldIssue.departments.join(', ') || 'No departments assigned'}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Old Created At</TableCell>
-                      <TableCell>{new Date(oldIssue.createdAt).toLocaleString()}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Old Updated At</TableCell>
-                      <TableCell>{new Date(oldIssue.updatedAt).toLocaleString()}</TableCell>
-                    </TableRow>
-                    <Divider sx={{ my: 1 }} />
-                  </React.Fragment>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )
-      )}
-    </TableContainer>
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={() => setIsDetailsModalOpen(false)}>Close</Button>
-  </DialogActions>
-</Dialog>
+                  </TableHead>
+                  <TableBody>
+                    {issueDetails ? (
+                      <TableRow>
+                        <TableCell>#{issueDetails.new?._id}</TableCell>
+                        <TableCell>{issueDetails.new?.description}</TableCell>
+                        <TableCell>{issueDetails.new?.priority}</TableCell>
+                        <TableCell>{issueDetails.new?.status}</TableCell>
+                        <TableCell>{issueDetails.new?.departments.join(', ') || 'No departments assigned'}</TableCell>
+                        <TableCell>{new Date(issueDetails.new?.createdAt).toLocaleString()}</TableCell>
+                        <TableCell>{new Date(issueDetails.new?.updatedAt).toLocaleString()}</TableCell>
+                      </TableRow>
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7}>Loading issue details...</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+
+            <Box sx={{ p: 2, border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#f9f9f9' }}>
+              <Typography variant="h6">Old Issue Details</Typography>
+              {issueDetails && issueDetails.old && issueDetails.old.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">No old details available.</Typography>
+              ) : (
+                issueDetails && issueDetails.old && (
+                  <TableContainer component={Paper}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell><strong>Old Description</strong></TableCell>
+                          <TableCell><strong>Old Priority</strong></TableCell>
+                          <TableCell><strong>Old Status</strong></TableCell>
+                          <TableCell><strong>Old Departments</strong></TableCell>
+                          <TableCell><strong>Old Created At</strong></TableCell>
+                          <TableCell><strong>Old Updated At</strong></TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {issueDetails.old.map((oldIssue, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{oldIssue.description}</TableCell>
+                            <TableCell>{oldIssue.priority}</TableCell>
+                            <TableCell>{oldIssue.status}</TableCell>
+                            <TableCell>{oldIssue.departments.join(', ') || 'No departments assigned'}</TableCell>
+                            <TableCell>{new Date(oldIssue.createdAt).toLocaleString()}</TableCell>
+                            <TableCell>{new Date(oldIssue.updatedAt).toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )
+              )}
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsDetailsModalOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
 
         <Dialog open={isIssueModalOpen}
           onClose={() => setIsIssueModalOpen(false)}

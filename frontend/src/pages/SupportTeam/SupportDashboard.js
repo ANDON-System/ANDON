@@ -82,7 +82,7 @@ const SupportDashboard = () => {
       ];
       setIssues(allIssues);
       setFilteredIssues(allIssues); // Initialize filtered issues
-  
+
       // Calculate counts
       setNewIssuesCount(acknowledgedResponse.data.length);
       setInProgressCount(inProgressResponse.data.length);
@@ -218,7 +218,7 @@ const SupportDashboard = () => {
           issue._id === selectedIssue._id ? { ...issue, status: 'Escalated', escalationRecipient, escalationReason } : issue
         ));
         setFilteredIssues(prevIssues => prevIssues.map(issue =>
-          issue._id === selectedIssue._id ? { ...issue , status: 'Escalated', escalationRecipient, escalationReason } : issue
+          issue._id === selectedIssue._id ? { ...issue, status: 'Escalated', escalationRecipient, escalationReason } : issue
         ));
         alert(`Issue #${selectedIssue._id} has been escalated.`);
         setEscalateDialogOpen(false);
@@ -314,7 +314,7 @@ const SupportDashboard = () => {
 
         <Typography variant="h6" sx={{ mb: 2 }}>Recent Issues</Typography>
         <TableContainer component={Paper}>
-          <Table sx={{ minWidth:  650 }}>
+          <Table sx={{ minWidth: 650 }}>
             <TableHead>
               <TableRow sx={{ bgcolor: '#f5f5f5' }}>
                 <TableCell>ID</TableCell>
@@ -369,17 +369,17 @@ const SupportDashboard = () => {
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         {issue.status === 'Acknowledged' || issue.status === 'Updated' ? (
                           <>
-                          <Button
-                            size="small"
-                            variant="contained"
-                            color="primary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewDetails(issue);
-                            }}
-                          >
-                            View Details
-                          </Button>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color="primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewDetails(issue);
+                              }}
+                            >
+                              View Details
+                            </Button>
                             <Button
                               size="small"
                               variant="contained"
@@ -484,8 +484,8 @@ const SupportDashboard = () => {
             </Box>
           </DialogTitle>
           <DialogContent dividers>
-            <Grid 
-            container spacing={3}>
+            <Grid
+              container spacing={3}>
               <Grid item xs={12}>
                 <Typography variant="subtitle1" gutterBottom>Description</Typography>
                 <Typography variant="body1" paragraph>
@@ -526,60 +526,77 @@ const SupportDashboard = () => {
         >
           <DialogTitle>Issue Details</DialogTitle>
           <DialogContent>
-            <Paper elevation={2} sx={{ p: 3 }}>
-              <Typography variant="h6">Issue ID: #{selectedIssue?._id}</Typography>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="body1" paragraph>
-                <strong>Description:</strong> {selectedIssue?.description}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Priority :</strong> {selectedIssue?.priority}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Status:</strong> {selectedIssue?.status}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Assignee:</strong> {selectedIssue?.assignee || 'Unassigned'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>SLA:</strong> {selectedIssue?.sla}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Created At:</strong> {new Date(selectedIssue?.createdAt).toLocaleString()}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Updated At:</strong> {new Date(selectedIssue?.updatedAt).toLocaleString()}
-              </Typography>
-              {selectedIssue?.oldIssues && selectedIssue.oldIssues.length > 0 && (
-                <>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="h6">Old Issue Details</Typography>
-                  {selectedIssue.oldIssues.map((oldIssue, index) => (
-                    <Box key={index} sx={{ mb: 2 }}>
-                      <Typography variant="body1" paragraph>
-                        <strong>Old Description:</strong> {oldIssue.description}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Old Priority:</strong> {oldIssue.priority}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Old Status:</strong> {oldIssue.status}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Old Departments:</strong> {oldIssue.departments.join(', ') || 'No departments assigned'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Old Created At:</strong> {new Date(oldIssue.createdAt).toLocaleString()}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Old Updated At:</strong> {new Date(oldIssue.updatedAt).toLocaleString()}
-                      </Typography>
-                      <Divider sx={{ my: 1 }} />
-                    </Box>
-                  ))}
-                </>
+            <Box sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#f9f9f9' }}>
+              <Typography variant="h6">Current Issue Details</Typography>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell><strong>Issue ID</strong></TableCell>
+                      <TableCell><strong>Description</strong></TableCell>
+                      <TableCell><strong>Priority</strong></TableCell>
+                      <TableCell><strong>Status</strong></TableCell>
+                      <TableCell><strong>Departments</strong></TableCell>
+                      <TableCell><strong>Created At</strong></TableCell>
+                      <TableCell><strong>Updated At</strong></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {selectedIssue ? (
+                      <TableRow>
+                        <TableCell>#{selectedIssue._id}</TableCell>
+                        <TableCell>{selectedIssue.description}</TableCell>
+                        <TableCell>{selectedIssue.priority}</TableCell>
+                        <TableCell>{selectedIssue.status}</TableCell>
+                        <TableCell>{selectedIssue.departments ? selectedIssue.departments.join(', ') : 'No departments assigned'}</TableCell>
+                        <TableCell>{new Date(selectedIssue.createdAt).toLocaleString()}</TableCell>
+                        <TableCell>{new Date(selectedIssue.updatedAt).toLocaleString()}</TableCell>
+                      </TableRow>
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7}>Loading issue details...</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+
+            <Box sx={{ p: 2, border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#f9f9f9' }}>
+              <Typography variant="h6">Old Issue Details</Typography>
+              {selectedIssue && selectedIssue.oldIssues && selectedIssue.oldIssues.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">No old details available.</Typography>
+              ) : (
+                selectedIssue && selectedIssue.oldIssues && (
+                  <TableContainer component={Paper}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell><strong>Old Description</strong></TableCell>
+                          <TableCell><strong>Old Priority</strong></TableCell>
+                          <TableCell><strong>Old Status</strong></TableCell>
+                          <TableCell><strong>Old Departments</strong></TableCell>
+                          <TableCell><strong>Old Created At</strong></TableCell>
+                          <TableCell><strong>Old Updated At</strong></TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {selectedIssue.oldIssues.map((oldIssue, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{oldIssue.description}</TableCell>
+                            <TableCell>{oldIssue.priority}</TableCell>
+                            <TableCell>{oldIssue.status}</TableCell>
+                            <TableCell>{oldIssue.departments ? oldIssue.departments.join(', ') : 'No departments assigned'}</TableCell>
+                            <TableCell>{new Date(oldIssue.createdAt).toLocaleString()}</TableCell>
+                            <TableCell>{new Date(oldIssue.updatedAt).toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )
               )}
-            </Paper>
+            </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDetailsDialogOpen(false)}>Close</Button>
