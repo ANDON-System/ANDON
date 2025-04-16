@@ -1,186 +1,111 @@
-import React, { useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemIcon, 
-  ListItemText, 
-  AppBar, 
-  Toolbar, 
-  CssBaseline, 
-  Divider, 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  Grid, 
-  Chip, 
-  Button, 
-  Badge, 
-  IconButton, 
-  Avatar,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import {
+  Box, Typography, Drawer, List, ListItem, ListItemIcon, ListItemText,
+  AppBar, Toolbar, CssBaseline, Divider, Card, CardContent, Grid,
+  Chip, Button, Badge, IconButton, Dialog, DialogTitle, DialogContent,
+  DialogActions, MenuItem, Select, FormControl, InputLabel, Tooltip
 } from '@mui/material';
 
 // Icons
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import ComputerIcon from '@mui/icons-material/Computer';
 import WarningIcon from '@mui/icons-material/Warning';
 import GroupIcon from '@mui/icons-material/Group';
-import MessageIcon from '@mui/icons-material/Message';
-import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import MenuIcon from '@mui/icons-material/Menu';
+import LogoutIcon from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person'; 
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import TeamIssues from './TeamIssues';
 
 const drawerWidth = 240;
 
-const TeamLeader = () => {
-  // Sample data
-  const [workstations, setWorkstations] = useState([
-    { id: 1, name: 'WS-001', status: 'online', issues: 2 },
-    { id: 2, name: 'WS-002', status: 'offline', issues: 0 },
-    { id: 3, name: 'WS-003', status: 'online', issues: 1 },
-    { id: 4, name: 'WS-004', status: 'online', issues: 0 },
-    { id: 5, name: 'WS-005', status: 'online', issues: 3 },
-  ]);
-
-  const [issues, setIssues] = useState([
-    { 
-      id: 1, 
-      workstation: 'WS-001', 
-      description: 'System crash during startup', 
-      status: 'pending', 
-      priority: 'high', 
-      escalated: false,
-      assignedTo: null,
-      timestamp: '2025-03-29T09:15:00'
-    },
-    { 
-      id: 2, 
-      workstation: 'WS-001', 
-      description: 'Network connectivity issues', 
-      status: 'in-progress', 
-      priority: 'medium', 
-      escalated: false,
-      assignedTo: 'John Doe',
-      timestamp: '2025-03-29T10:22:00'
-    },
-    { 
-      id: 3, 
-      workstation: 'WS-003', 
-      description: 'Software update failed', 
-      status: 'pending', 
-      priority: 'low', 
-      escalated: false,
-      assignedTo: null,
-      timestamp: '2025-03-29T11:05:00'
-    },
-    { 
-      id: 4, 
-      workstation: 'WS-005', 
-      description: 'Hardware malfunction', 
-      status: 'escalated', 
-      priority: 'high', 
-      escalated: true,
-      assignedTo: 'Support Team',
-      timestamp: '2025-03-29T08:45:00'
-    },
-    { 
-      id: 5, 
-      workstation: 'WS-005', 
-      description: 'Database connection timeout', 
-      status: 'resolved', 
-      priority: 'high', 
-      escalated: false,
-      assignedTo: 'Jane Smith',
-      timestamp: '2025-03-29T07:30:00'
-    },
-    { 
-      id: 6, 
-      workstation: 'WS-005', 
-      description: 'Security alert: Unauthorized access attempt', 
-      status: 'in-progress', 
-      priority: 'high', 
-      escalated: true,
-      assignedTo: 'Security Team',
-      timestamp: '2025-03-29T12:10:00'
-    },
-  ]);
-
-  const supportTeam = [
-    { id: 1, name: 'John Doe', role: 'IT Support', availability: 'available' },
-    { id: 2, name: 'Jane Smith', role: 'Network Specialist', availability: 'busy' },
-    { id: 3, name: 'Robert Johnson', role: 'Hardware Tech', availability: 'available' },
-    { id: 4, name: 'Emily Davis', role: 'Software Support', availability: 'offline' },
-  ];
-
-  // UI state
+const TeamLeaderDashboard = () => {
+  const [issues, setIssues] = useState([]);
+  const [supportTeam, setSupportTeam] = useState([]);
   const [selectedView, setSelectedView] = useState('dashboard');
   const [selectedIssue, setSelectedIssue] = useState(null);
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTeamMember, setSelectedTeamMember] = useState('');
-  const [messageText, setMessageText] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const handleAssignIssue = (issue) => {
-    setSelectedIssue(issue);
-    setIsAssignDialogOpen(true);
+  // Fetch issues and support team on component mount
+  useEffect(() => {
+    const fetchIssues = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/issues/');
+        setIssues(response.data);
+      } catch (error) {
+        console.error("Error fetching issues:", error);
+      }
+    };
+
+    const fetchSupportTeam = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/users/');
+        setSupportTeam(response.data);
+      } catch (error) {
+        console.error("Error fetching support team:", error);
+      }
+    };
+
+    fetchIssues();
+    fetchSupportTeam();
+  }, []);
+
+  // Handle sidebar toggle
+  const toggleDrawer = () => {
+    setDrawerOpen(!drawerOpen);
   };
 
-  const handleConfirmAssign = () => {
+  // Handle view selection and navigate to the appropriate route
+  const handleViewSelect = (view) => {
+    setSelectedView(view);
+    if (view === 'issues') {
+      navigate('/team-issues');
+    }
+    if (window.innerWidth < 600) {
+      setDrawerOpen(false);
+    }
+  };
+
+  // Handle actions
+  const handleEditIssue = (issue) => {
+    setSelectedIssue(issue);
+    setSelectedTeamMember(issue.assignedTo || '');
+    setIsEditDialogOpen(true);
+  };
+
+  const handleConfirmEdit = async () => {
     if (selectedTeamMember) {
       const updatedIssues = issues.map(issue => 
-        issue.id === selectedIssue.id 
-          ? {...issue, assignedTo: selectedTeamMember, status: 'in-progress'} 
+        issue._id === selectedIssue._id 
+          ? { 
+              ...issue, 
+              assignedTo: selectedTeamMember,
+              assignedAt: new Date().toISOString() // Add timestamp when issue is assigned
+            } 
           : issue
       );
       setIssues(updatedIssues);
-      setIsAssignDialogOpen(false);
+      setIsEditDialogOpen(false);
       setSelectedTeamMember('');
+
+      // Update the issue in the backend
+      await axios.put(`http://localhost:5000/api/issues/${selectedIssue._id}`, {
+        assignedTo: selectedTeamMember,
+        assignedAt: new Date().toISOString()
+      });
     }
   };
 
-  const handleEscalateIssue = (issueId) => {
-    const updatedIssues = issues.map(issue => 
-      issue.id === issueId 
-        ? {...issue, escalated: true, status: 'escalated'} 
-        : issue
-    );
-    setIssues(updatedIssues);
-  };
-
-  const handleOpenMessageDialog = () => {
-    setIsMessageDialogOpen(true);
-  };
-
-  const handleSendMessage = () => {
-    console.log(`Message sent: ${messageText}`);
-    setMessageText('');
-    setIsMessageDialogOpen(false);
-  };
-
-  const priorityColor = (priority) => {
-    switch(priority) {
-      case 'critical': return 'error';
-      case 'high': return 'warning';
-      case 'medium': return 'info';
-      case 'low': return 'success';
-      default: return 'default';
-    }
-  };
-
+  // Helper functions
   const statusIcon = (status) => {
     switch(status) {
       case 'pending': return <WarningIcon color="warning" />;
@@ -191,410 +116,279 @@ const TeamLeader = () => {
     }
   };
 
-  // Summary cards component for reuse across views
-  const renderSummaryCards = () => (
-    <Grid container spacing={3}>
-      <Grid item xs={12} md={3}>
-        <Card>
-          <CardContent>
-            <Typography color="textSecondary" gutterBottom>
-              Total Workstations
-            </Typography>
-            <Typography variant="h3">
-              {workstations.length}
-            </Typography>
-            <Typography variant="body2">
-              {workstations.filter(ws => ws.status === 'online').length} online
-            </Typography>
-          </CardContent>
-        </Card>
-      </Grid>
-      
-      <Grid item xs={12} md={3}>
-        <Card>
-          <CardContent>
-            <Typography color="textSecondary" gutterBottom>
-              Pending Issues
-            </Typography>
-            <Typography variant="h3">
-              {issues.filter(issue => issue.status === 'pending').length}
-            </Typography>
-            <Typography variant="body2">
-              {issues.filter(issue => issue.priority === 'high' || issue.priority === 'critical').length} high priority
-            </Typography>
-          </CardContent>
-        </Card>
-      </Grid>
-      
-      <Grid item xs={12} md={3}>
-        <Card>
-          <CardContent>
-            <Typography color="textSecondary" gutterBottom>
-              Escalated Issues
-            </Typography>
-            <Typography variant="h3">
-              {issues.filter(issue => issue.escalated).length}
-            </Typography>
-            <Typography variant="body2">
-              Requires attention
-            </Typography>
-          </CardContent>
-        </Card>
-      </Grid>
-      
-      <Grid item xs={12} md={3}>
-        <Card>
-          <CardContent>
-            <Typography color="textSecondary" gutterBottom>
-              Available Support
-            </Typography>
-            <Typography variant="h3">
-              {supportTeam.filter(member => member.availability === 'available').length}
-            </Typography>
-            <Typography variant="body2">
-              of {supportTeam.length} team members
-            </Typography>
-          </CardContent>
-        </Card>
-      </Grid>
-    </Grid>
-  );
+  const priorityColor = (priority) => {
+    switch(priority) {
+      case 'high': return 'error';
+      case 'medium': return 'warning';
+      case 'low': return 'success';
+      default: return 'default';
+    }
+  };
 
-  // Issues list component for reuse across views
-  const renderIssuesList = (limit = null) => {
-    const filteredIssues = issues
-      .filter(issue => issue.status !== 'resolved')
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
-    const displayIssues = limit ? filteredIssues.slice(0, limit) : filteredIssues;
-    
-    return (
-      <Card>
-        <CardHeader title="Active Issues" />
-        <CardContent>
-          <Grid container spacing={2}>
-            {displayIssues.map(issue => (
-              <Grid item xs={12} key={issue.id}>
-                <Card variant="outlined">
+  // Calculate team member assignments
+  const getTeamMemberAssignmentCount = (memberName) => {
+    return issues.filter(issue => issue.assignedTo === memberName).length;
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not assigned';
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+
+  // Dashboard content renderer
+  const renderContent = () => {
+    switch(selectedView) {
+      case 'dashboard':
+        return (
+          <Box p={3}>
+            <Typography variant="h5" gutterBottom>Team Leader Dashboard</Typography>
+            
+            {/* Summary Cards */}
+            <Grid container spacing={2} mb={3}>
+              <Grid item xs={12} sm={6} md={3}>
+                <Card>
                   <CardContent>
-                    <Grid container spacing={2} alignItems="center">
-                      <Grid item xs={1}>
-                        {statusIcon(issue.status)}
-                      </Grid>
-                      <Grid item xs={2}>
-                        <Typography variant="subtitle2">
-                          {issue.workstation}
-                        </Typography>
+                    <Typography color="textSecondary" gutterBottom>Active Issues</Typography>
+                    <Typography variant="h4">
+                      {issues.filter(i => i.status !== 'resolved').length}
+                    </Typography>
+                    <Typography variant="body2">
+                      {issues.filter(i => i.status === 'pending').length} pending
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Card>
+                  <CardContent>
+                    <Typography color="textSecondary" gutterBottom>Escalated</Typography>
+                    <Typography variant="h4">
+                      {issues.filter(i => i.status === 'escalated').length}
+                    </Typography>
+                    <Typography variant="body2">Requires attention</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Card>
+                  <CardContent>
+                    <Typography color="textSecondary" gutterBottom>Support Team</Typography>
+                    <Typography variant="h4">
+                      {supportTeam.filter(m => m.availability === 'available').length}
+                    </Typography>
+                    <Typography variant="body2">team members available</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              {/* New Card: Assigned Issues */}
+              <Grid item xs={12} sm={6} md={3}>
+                <Card>
+                  <CardContent>
+                    <Typography color="textSecondary" gutterBottom>Assigned Issues</Typography>
+                    <Typography variant="h4">
+                      {issues.filter(i => i.assignedTo).length}
+                    </Typography>
+                    <Typography variant="body2">
+                      {issues.filter(i => !i.assignedTo && i.status !== 'resolved').length} unassigned
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+            
+            {/* Issues List */}
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Active Issues</Typography>
+                {issues.filter(i => i.status !== 'resolved').map(issue => (
+                  <Card key={issue._id} variant="outlined" sx={{ mb: 1, p: 1 }}>
+                    <Grid container alignItems="center" spacing={1}>
+                      <Grid item xs={12} md={1}>{statusIcon(issue.status)}</Grid>
+                      <Grid item xs={12} md={3}>{issue.description}</Grid>
+                      <Grid item xs={6} md={1}>
                         <Chip 
                           size="small" 
                           label={issue.priority} 
                           color={priorityColor(issue.priority)} 
                         />
                       </Grid>
-                      <Grid item xs={4}>
-                        <Typography>{issue.description}</Typography>
-                        <Typography variant="caption">
-                          {new Date(issue.timestamp).toLocaleString()}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={2}>
-                        <Typography>
-                          {issue.assignedTo || 'Unassigned'}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={3}>
-                        <Box display="flex" justifyContent="flex-end">
-                          {!issue.assignedTo && (
-                            <Button 
-                              variant="contained" 
-                              size="small" 
+                      {/* Assigned To Section */}
+                      <Grid item xs={6} md={2}>
+                        {issue.assignedTo ? (
+                          <Tooltip title={`Assigned at: ${formatDate(issue.assignedAt)}`}>
+                            <Chip
+                              icon={<PersonIcon />}
+                              label={issue.assignedTo}
+                              size="small"
                               color="primary"
-                              onClick={() => handleAssignIssue(issue)}
-                              sx={{ mr: 1 }}
-                            >
-                              Assign
-                            </Button>
-                          )}
-                          {!issue.escalated && issue.status !== 'escalated' && (
-                            <Button 
-                              variant="contained" 
-                              size="small" 
-                              color="error"
-                              onClick={() => handleEscalateIssue(issue.id)}
-                            >
-                              Escalate
-                            </Button>
-                          )}
-                        </Box>
+                            />
+                          </Tooltip>
+                        ) : (
+                          <Chip
+                            label="Unassigned"
+                            size="small"
+                            variant="outlined"
+                          />
+                        )}
+                      </Grid>
+                      {/* Assignment Time Section */}
+                      <Grid item xs={6} md={2}>
+                        {issue.assignedAt && (
+                          <Tooltip title="Assignment Time">
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <AccessTimeIcon fontSize="small" sx={{ mr: 0.5 }} />
+                              <Typography variant="caption">
+                                {formatDate(issue.assignedAt)}
+                              </Typography>
+                            </Box>
+                          </Tooltip>
+                        )}
+                      </Grid>
+                      <Grid item xs={6} md={3} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        {issue.assignedTo ? (
+                          <Button 
+                            variant="contained" 
+                            size="small" 
+                            onClick={() => handleEditIssue(issue)}
+                            sx={{ mr: 1 }}
+                          >
+                            Reassign
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="contained" 
+                            size="small" 
+                            onClick={() => handleEditIssue(issue)}
+                          >
+                            Assign
+                          </Button>
+                        )}
                       </Grid>
                     </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  // Workstation list component for reuse across views
-  const renderWorkstationsList = () => (
-    <Card>
-      <CardHeader title="Workstation Status" />
-      <CardContent>
-        <List>
-          {workstations.map(workstation => (
-            <ListItem key={workstation.id}>
-              <ListItemIcon>
-                <ComputerIcon color={workstation.status === 'online' ? 'success' : 'error'} />
-              </ListItemIcon>
-              <ListItemText 
-                primary={workstation.name} 
-                secondary={`Status: ${workstation.status}`} 
-              />
-              {workstation.issues > 0 && (
-                <Chip 
-                  label={`${workstation.issues} issues`} 
-                  color="warning" 
-                  size="small" 
-                />
-              )}
-            </ListItem>
-          ))}
-        </List>
-      </CardContent>
-    </Card>
-  );
-
-  // Support team list component for reuse across views
-  const renderSupportTeamList = () => (
-    <Card>
-      <CardHeader 
-        title="Support Team" 
-        action={
-          <Button 
-            variant="contained" 
-            color="primary" 
-            size="small"
-            onClick={handleOpenMessageDialog}
-            startIcon={<MessageIcon />}
-          >
-            Message
-          </Button>
-        }
-      />
-      <CardContent>
-        <List>
-          {supportTeam.map(member => (
-            <ListItem key={member.id}>
-              <ListItemIcon>
-                <Avatar>{member.name.charAt(0)}</Avatar>
-              </ListItemIcon>
-              <ListItemText 
-                primary={member.name} 
-                secondary={member.role} 
-              />
-              <Chip 
-                label={member.availability} 
-                color={
-                  member.availability === 'available' ? 'success' : 
-                  member.availability === 'busy' ? 'warning' : 'default'
-                }
-                size="small" 
-              />
-            </ListItem>
-          ))}
-        </List>
-      </CardContent>
-    </Card>
-  );
-
-  const renderContent = () => {
-    switch(selectedView) {
-      case 'dashboard':
-        return (
-          <Box p={3}>
-            <Typography variant="h4" gutterBottom>Team Leader Dashboard</Typography>
-            {renderSummaryCards()}
-            <Box mt={3}>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  {renderIssuesList(5)}
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  {renderWorkstationsList()}
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  {renderSupportTeamList()}
-                </Grid>
-              </Grid>
-            </Box>
-          </Box>
-        );
-        
-      case 'workstations':
-        return (
-          <Box p={3}>
-            <Typography variant="h4" gutterBottom>Workstations</Typography>
-            {renderSummaryCards()}
-            <Box mt={3}>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  {renderWorkstationsList()}
-                </Grid>
-                <Grid item xs={12}>
-                  <Card>
-                    <CardHeader title="Workstation Issues" />
-                    <CardContent>
-                      <Grid container spacing={2}>
-                        {issues
-                          .filter(issue => issue.status !== 'resolved')
-                          .sort((a, b) => a.workstation.localeCompare(b.workstation))
-                          .map(issue => (
-                            <Grid item xs={12} md={6} key={issue.id}>
-                              <Card variant="outlined">
-                                <CardContent>
-                                  <Typography variant="h6">{issue.workstation}</Typography>
-                                  <Box display="flex" alignItems="center" mt={1}>
-                                    {statusIcon(issue.status)}
-                                    <Typography sx={{ ml: 1 }}>{issue.description}</Typography>
-                                  </Box>
-                                  <Box display="flex" justifyContent="space-between" mt={1}>
-                                    <Chip 
-                                      size="small" 
-                                      label={issue.priority} 
-                                      color={priorityColor(issue.priority)} 
-                                    />
-                                    <Typography variant="body2">
-                                      {issue.assignedTo || 'Unassigned'}
-                                    </Typography>
-                                  </Box>
-                                </CardContent>
-                              </Card>
-                            </Grid>
-                          ))}
-                      </Grid>
-                    </CardContent>
                   </Card>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Team Members Assignment Stats */}
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Team Member Assignments</Typography>
+                <Grid container spacing={2}>
+                  {supportTeam.map(member => (
+                    <Grid item xs={12} sm={6} md={4} key={member._id}>
+                      <Card variant="outlined">
+                        <CardContent>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography variant="subtitle1">{member.name}</Typography>
+                            <Chip
+                              label={member.availability}
+                              color={member.availability === 'available' ? 'success' : 'error'}
+                              size="small"
+                            />
+                          </Box>
+                          <Typography variant="h6">
+                            {getTeamMemberAssignmentCount(member.name)} issues
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
                 </Grid>
-              </Grid>
-            </Box>
+              </CardContent>
+            </Card>
           </Box>
         );
-        
       case 'issues':
-        return (
-          <Box p={3}>
-            <Typography variant="h4" gutterBottom>Issue Tracking</Typography>
-            {renderSummaryCards()}
-            <Box mt={3}>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  {renderIssuesList()}
-                </Grid>
-                <Grid item xs={12}>
-                  <Card>
-                    <CardHeader title="Resolved Issues" />
-                    <CardContent>
-                      <List>
-                        {issues
-                          .filter(issue => issue.status === 'resolved')
-                          .map(issue => (
-                            <ListItem key={issue.id}>
-                              <ListItemIcon>
-                                <CheckCircleIcon color="success" />
-                              </ListItemIcon>
-                              <ListItemText 
-                                primary={issue.description} 
-                                secondary={`${issue.workstation} | Resolved by: ${issue.assignedTo}`} 
-                              />
-                              <Typography variant="caption">
-                                {new Date(issue.timestamp).toLocaleString()}
-                              </Typography>
-                            </ListItem>
-                          ))}
-                      </List>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </Box>
-          </Box>
-        );
-        
+        return <TeamIssues />; // Render TeamIssues component
       case 'team':
         return (
           <Box p={3}>
-            <Typography variant="h4" gutterBottom>Support Team</Typography>
-            {renderSummaryCards()}
-            <Box mt={3}>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  {renderSupportTeamList()}
-                </Grid>
-                <Grid item xs={12} md={6}>
+            <Typography variant="h5" gutterBottom>Support Team</Typography>
+            <Grid container spacing={2}>
+              {supportTeam.map(member => (
+                <Grid item xs={12} sm={6} md={4} key={member._id}>
                   <Card>
-                    <CardHeader title="Assigned Issues" />
                     <CardContent>
-                      {supportTeam.map(member => (
-                        <Box key={member.id} mb={2}>
-                          <Typography variant="subtitle1">{member.name}</Typography>
-                          <Divider />
-                          <List dense>
-                            {issues
-                              .filter(issue => issue.assignedTo === member.name && issue.status !== 'resolved')
-                              .map(issue => (
-                                <ListItem key={issue.id}>
-                                  <ListItemIcon>
-                                    {statusIcon(issue.status)}
-                                  </ListItemIcon>
-                                  <ListItemText 
-                                    primary={issue.description} 
-                                    secondary={issue.workstation} 
-                                  />
-                                  <Chip 
-                                    size="small" 
-                                    label={issue.priority} 
-                                    color={priorityColor(issue.priority)} 
-                                  />
-                                </ListItem>
-                              ))}
-                            {issues.filter(issue => issue.assignedTo === member.name && issue.status !== 'resolved').length === 0 && (
-                              <ListItem>
-                                <ListItemText primary="No active issues assigned" />
-                              </ListItem>
-                            )}
-                          </List>
-                        </Box>
-                      ))}
+                      <Typography variant="h6">{member.name}</Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                        <Chip
+                          label={member.availability}
+                          color={member.availability === 'available' ? 'success' : 'error'}
+                        />
+                        <Typography>
+                          {getTeamMemberAssignmentCount(member.name)} assigned issues
+                        </Typography>
+                      </Box>
                     </CardContent>
                   </Card>
                 </Grid>
-              </Grid>
-            </Box>
+              ))}
+            </Grid>
           </Box>
         );
-        
       default:
-        return (
-          <Box p={3}>
-            <Typography>Select a view from the sidebar</Typography>
-          </Box>
-        );
+        return <Box p={3}><Typography>Select a view</Typography></Box>;
     }
   };
+
+  // Sidebar content
+  const drawerContent = (
+    <>
+      <Toolbar>
+        <Typography variant="h6" noWrap>Control Panel</Typography>
+      </Toolbar>
+      <Divider />
+      <List>
+        <ListItem button selected={selectedView === 'dashboard'} onClick={() => handleViewSelect('dashboard')}>
+          <ListItemIcon><DashboardIcon /></ListItemIcon>
+          <ListItemText primary="Dashboard" />
+        </ListItem>
+        <ListItem button selected={selectedView === 'issues'} onClick={() => handleViewSelect('issues')}>
+          <ListItemIcon><WarningIcon /></ListItemIcon>
+          <ListItemText primary="Issues" />
+          <Chip 
+            label={issues.filter(i => i.status !== 'resolved').length} 
+            size="small" 
+            color="error" 
+          />
+        </ListItem>
+        <ListItem button selected={selectedView === 'team'} onClick={() => handleViewSelect('team')}>
+          <ListItemIcon><GroupIcon /></ListItemIcon>
+          <ListItemText primary="Support Team" />
+          <Chip 
+            label={supportTeam.length} 
+            size="small" 
+            color="primary" 
+          />
+        </ListItem>
+        <Divider sx={{ my: 1 }} />
+        <ListItem button onClick={() => window.location.href = '/'}>
+          <ListItemIcon><LogoutIcon /></ListItemIcon>
+          <ListItemText primary="Logout" />
+        </ListItem>
+      </List>
+    </>
+  );
 
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar
-        position="fixed"
-        sx={{ width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px` }}
-      >
+      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={toggleDrawer}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Team Leader Console
+            Andon System - Team Leader
           </Typography>
           <IconButton color="inherit">
             <Badge badgeContent={issues.filter(i => i.status === 'pending').length} color="error">
@@ -603,107 +397,43 @@ const TeamLeader = () => {
           </IconButton>
         </Toolbar>
       </AppBar>
+      
+      {/* Temporary drawer that shows/hides with menu icon click */}
       <Drawer
+        variant="temporary"
+        open={drawerOpen}
+        onClose={toggleDrawer}
         sx={{
           width: drawerWidth,
           flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-          },
+          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
         }}
-        variant="permanent"
-        anchor="left"
       >
-        <Toolbar>
-          <Typography variant="h6" noWrap>
-            Control Panel
-          </Typography>
-        </Toolbar>
-        <Divider />
-        <List>
-          <ListItem 
-            button 
-            selected={selectedView === 'dashboard'} 
-            onClick={() => setSelectedView('dashboard')}
-          >
-            <ListItemIcon>
-              <DashboardIcon />
-            </ListItemIcon>
-            <ListItemText primary="Dashboard" />
-          </ListItem>
-          <ListItem 
-            button 
-            selected={selectedView === 'workstations'} 
-            onClick={() => setSelectedView('workstations')}
-          >
-            <ListItemIcon>
-              <ComputerIcon />
-            </ListItemIcon>
-            <ListItemText primary="Workstations" />
-            <Chip 
-              label={workstations.length} 
-              size="small" 
-              color="primary" 
-            />
-          </ListItem>
-          <ListItem 
-            button 
-            selected={selectedView === 'issues'} 
-            onClick={() => setSelectedView('issues')}
-          >
-            <ListItemIcon>
-              <WarningIcon />
-            </ListItemIcon>
-            <ListItemText primary="Issues" />
-            <Chip 
-              label={issues.filter(i => i.status !== 'resolved').length} 
-              size="small" 
-              color="error" 
-            />
-          </ListItem>
-          <ListItem 
-            button 
-            selected={selectedView === 'team'} 
-            onClick={() => setSelectedView('team')}
-          >
-            <ListItemIcon>
-              <GroupIcon />
-            </ListItemIcon>
-            <ListItemText primary="Support Team" />
-          </ListItem>
-        </List>
-        <Divider />
-        <List>
-          <ListItem button onClick={handleOpenMessageDialog}>
-            <ListItemIcon>
-              <MessageIcon />
-            </ListItemIcon>
-            <ListItemText primary="Messages" />
-          </ListItem>
-          <ListItem button>
-            <ListItemIcon>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText primary="Logout" />
-          </ListItem>
-        </List>
+        {drawerContent}
       </Drawer>
-      <Box
-        component="main"
-        sx={{ flexGrow: 1, bgcolor: 'background.default', p: 0 }}
-      >
+      
+      <Box component="main" sx={{ flexGrow: 1, bgcolor: 'background.default', p: 0 }}>
         <Toolbar />
         {renderContent()}
       </Box>
 
-      {/* Assign Issue Dialog */}
-      <Dialog open={isAssignDialogOpen} onClose={() => setIsAssignDialogOpen(false)}>
-        <DialogTitle>Assign Issue</DialogTitle>
-        <DialogContent>
-          <Typography variant="subtitle1" gutterBottom>
+      {/* Edit Issue Dialog */}
+      <Dialog open={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)}>
+        <DialogTitle>
+          {selectedIssue && selectedIssue.assignedTo ? 'Reassign Issue' : 'Assign Issue'}
+        </DialogTitle>
+        <DialogContent sx={{ minWidth: 300 }}>
+          <Typography variant="body1" gutterBottom>
             {selectedIssue && selectedIssue.description}
           </Typography>
+          
+          {selectedIssue && selectedIssue.assignedTo && (
+            <Typography variant="body2" color="textSecondary" sx={{ mt: 1, mb: 2 }}>
+              Currently assigned to: {selectedIssue.assignedTo}
+              {selectedIssue.assignedAt && ` (since ${formatDate(selectedIssue.assignedAt)})`}
+            </Typography>
+          )}
+          
           <FormControl fullWidth sx={{ mt: 2 }}>
             <InputLabel>Assign to</InputLabel>
             <Select
@@ -712,64 +442,18 @@ const TeamLeader = () => {
               label="Assign to"
             >
               {supportTeam.map(member => (
-                <MenuItem key={member.id} value={member.name} disabled={member.availability === 'offline'}>
-                  {member.name} - {member.role} ({member.availability})
+                <MenuItem key={member._id} value={member.name}>
+                  {member.name} ({member.availability}) - 
+                  {getTeamMemberAssignmentCount(member.name)} issues
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsAssignDialogOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handleConfirmAssign} 
-            variant="contained" 
-            color="primary"
-            disabled={!selectedTeamMember}
-          >
-            Assign
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Message Dialog */}
-      <Dialog open={isMessageDialogOpen} onClose={() => setIsMessageDialogOpen(false)}>
-        <DialogTitle>Send Message</DialogTitle>
-        <DialogContent>
-          <FormControl fullWidth sx={{ mt: 2, mb: 2 }}>
-            <InputLabel>Recipient</InputLabel>
-            <Select
-              value={selectedTeamMember}
-              onChange={(e) => setSelectedTeamMember(e.target.value)}
-              label="Recipient"
-            >
-              <MenuItem value="Support Team">Support Team (All)</MenuItem>
-              {supportTeam.map(member => (
-                <MenuItem key={member.id} value={member.name}>
-                  {member.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            autoFocus
-            label="Message"
-            multiline
-            rows={4}
-            fullWidth
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsMessageDialogOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handleSendMessage} 
-            variant="contained" 
-            color="primary"
-            disabled={!messageText || !selectedTeamMember}
-          >
-            Send
+          <Button onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleConfirmEdit} variant="contained" disabled={!selectedTeamMember}>
+            {selectedIssue && selectedIssue.assignedTo ? 'Reassign' : 'Assign'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -777,4 +461,4 @@ const TeamLeader = () => {
   );
 };
 
-export default TeamLeader;
+export default TeamLeaderDashboard;

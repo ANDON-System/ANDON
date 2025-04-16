@@ -16,6 +16,8 @@ import MyAssignments from "./pages/SupportTeam/MyAssignment";
 import UserRoleManagement from "./pages/Admin/UserRoleManagement";
 import IssueCategory from "./pages/Admin/IssueCategory";
 import DepartmentManagement from "./pages/Admin/DepartmentManagement";
+import TeamIssues from "./pages/TeamLeader/TeamIssues";
+
 
 
 function App() {
@@ -39,6 +41,9 @@ function App() {
         <Route path="/user-management" element={<UserRoleManagement/>}/>
         <Route path="/issues-category" element={<IssueCategory/>}/>
         <Route path="/department-manage" element={<DepartmentManagement/>}/>
+        <Route path="/team-issues" element={<TeamIssues/>}/>
+
+
       </Routes>
     </Router>
   );
