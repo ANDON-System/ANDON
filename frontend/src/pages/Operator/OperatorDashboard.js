@@ -46,12 +46,17 @@ const OperatorDashboard = () => {
   useEffect(() => {
     const fetchIssues = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/issues");
-        setIssues(response.data.filter(issue => issue.status === "Open")); // Fetch only open issues
+          const token = localStorage.getItem("token"); // Get the token from local storage
+          const response = await axios.get("http://localhost:5000/api/issues", {
+              headers: {
+                  Authorization: `Bearer ${token}` // Include the token in the headers
+              }
+          });
+          setIssues(response.data); // Set the fetched issues to state
       } catch (error) {
-        console.error("Error fetching issues:", error);
+          console.error("Error fetching issues:", error);
       }
-    };
+  };
 
     const fetchResolvedIssues = async () => {
       try {
@@ -78,17 +83,22 @@ const OperatorDashboard = () => {
 
   const createIssue = async (issueData) => {
     try {
-      const response = await axios.post("http://localhost:5000/api/issues", {
-        ...issueData,
-        machine_id: machineId // Include the machine_id
-      });
-      setIssues(prevIssues => [...prevIssues, response.data]);
-      setSnackbarMessage('New issue raised successfully.');
-      setSnackbarOpen(true);
+        const token = localStorage.getItem("token"); // Get the token from local storage
+        const response = await axios.post("http://localhost:5000/api/issues", {
+            ...issueData,
+            machine_id: machineId // Include the machine_id
+        }, {
+            headers: {
+                Authorization: `Bearer ${token}` // Include the token in the headers
+            }
+        });
+        setIssues(prevIssues => [...prevIssues, response.data]);
+        setSnackbarMessage('New issue raised successfully.');
+        setSnackbarOpen(true);
     } catch (error) {
-      console.error("Error creating issue:", error.response ? error.response.data : error.message);
+        console.error("Error creating issue:", error.response ? error.response.data : error.message);
     }
-  };
+};
 
   const updateIssue = async (id, newData) => {
     try {

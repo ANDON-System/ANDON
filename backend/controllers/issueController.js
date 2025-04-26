@@ -4,21 +4,25 @@ const OldIssue = require("../models/oldIssueModel"); // Import the old issue mod
 // Report a new issue
 exports.reportIssue = async (req, res) => {
   try {
-    const newIssue = new Issue(req.body);
-    await newIssue.save();
-    res.status(201).json(newIssue);
+      const newIssue = new Issue({
+          ...req.body,
+          reportedBy: req.user.userId // Associate the issue with the logged-in user
+      });
+      await newIssue.save();
+      res.status(201).json(newIssue);
   } catch (error) {
-    res.status(500).json({ error: "Failed to create issue", details: error.message });
+      console.error("Error during issue creation:", error); // Log the error for debugging
+      res.status(500).json({ error: "Failed to create issue", details: error.message });
   }
 };
 
 // Get all open issues
 exports.getOpenIssues = async (req, res) => {
   try {
-    const openIssues = await Issue.find({ status: "Open" });
-    res.json(openIssues);
+      const openIssues = await Issue.find({ status: "Open", reportedBy: req.user.userId }); // Filter by reportedBy
+      res.json(openIssues);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch open issues", details: error.message });
+      res.status(500).json({ error: "Failed to fetch open issues", details: error.message });
   }
 };
 

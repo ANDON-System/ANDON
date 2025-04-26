@@ -17,11 +17,13 @@ const {
   getIssueById, // Import the new function
   getUpdatedIssues
 } = require("../controllers/issueController");
+const authMiddleware = require("../config/authMiddleware");
+
 
 const router = express.Router();
 
-router.post("/", reportIssue);
-router.get("/", getOpenIssues); // Fetch open issues
+router.post("/", authMiddleware(), reportIssue); // Ensure the middleware is applied here
+router.get("/", authMiddleware(), getOpenIssues); // Also apply it to getOpenIssues if needed
 router.get("/resolved", getResolvedIssues); // Fetch resolved issues
 router.get("/updated", getUpdatedIssues);   //fetch updated issues
 router.get("/completed", getCompletedIssues); // Fetch completed issues

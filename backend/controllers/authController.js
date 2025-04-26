@@ -55,10 +55,10 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id, role: user.role },
+      { userId: user._id, role: user.role }, // Ensure userId is included
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
-    );
+  );
 
     res.json({ token, user });
   } catch (err) {

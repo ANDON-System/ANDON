@@ -47,7 +47,12 @@ const ActiveIssues = () => {
   useEffect(() => {
     const fetchIssues = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/issues");
+        const token = localStorage.getItem("token"); // Get the token from local storage
+        const response = await axios.get("http://localhost:5000/api/issues", {
+          headers: {
+            Authorization: `Bearer ${token}` // Include the token in the headers
+          }
+        });
         setIssues(response.data.filter(issue => issue.status === "Open")); // Fetch only open issues
       } catch (error) {
         console.error("Error fetching issues:", error);
@@ -78,19 +83,24 @@ const ActiveIssues = () => {
 
   const createIssue = async (issueData) => {
     try {
-      const response = await axios.post("http://localhost:5000/api/issues", {
-        ...issueData,
-        title: issueTitle, // Include title in the issue data
-        sla: issueSLA, // Include SLA in the issue data
-        machine_id: machineId // Include machine_id in the issue data
-      });
-      setIssues(prevIssues => [...prevIssues, response.data]); // Add the new issue to the state
-      setNotifications(prev => [...prev, { id: Date.now(), message: 'New issue raised successfully.', timestamp: new Date().toLocaleString() }]); // Add notification
-      alert('New issue raised successfully.'); // Alert message
+        const token = localStorage.getItem("token"); // Get the token from local storage
+        const response = await axios.post("http://localhost:5000/api/issues", {
+            ...issueData,
+            title: issueTitle,
+            sla: issueSLA,
+            machine_id: machineId
+        }, {
+            headers: {
+                Authorization: `Bearer ${token}` // Include the token in the headers
+            }
+        });
+        setIssues(prevIssues => [...prevIssues, response.data]); // Add the new issue to the state
+        setNotifications(prev => [...prev, { id: Date.now(), message: 'New issue raised successfully.', timestamp: new Date().toLocaleString() }]); // Add notification
+        alert('New issue raised successfully.'); // Alert message
     } catch (error) {
-      console.error("Error creating issue:", error.response ? error.response.data : error.message);
+        console.error("Error creating issue:", error.response ? error.response.data : error.message);
     }
-  };
+};
 
   const updateIssue = async (id, newData) => {
     try {
