@@ -3,7 +3,7 @@ import Register from "./components/Register";
 import Login from "./components/Login";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
-import DepartmentDashboard from "./pages/DepartmentDashboard";
+import DepartmentDashboard from "./pages/Department/DepartmentDashboard";
 import TeamLeaderDashboard from "./pages/TeamLeader/TeamLeaderDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import ManageTeamLeader from "./pages/Department/ManageTeamLeader";
