@@ -30,7 +30,7 @@ const DepartmentSidebar = () => {
         { text: "Dashboard", icon: <DashboardIcon />, path: "/department-dashboard" },
         { text: "Manage Team Leaders", icon: <AssignmentIcon />, path: "/manage-team" },
         { text: "Task Assignment & Tracking", icon: <AssignmentIcon />, path: "/task-track" },
-        { text: "Issue Management", icon: <AssignmentIcon />, path: "/issues-dept" },
+        // { text: "Issue Management", icon: <AssignmentIcon />, path: "/issues-dept" },
         { text: "Logout", icon: <ExitToAppIcon />, onClick: handleLogoutClick }
     ];
 

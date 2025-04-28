@@ -17,7 +17,7 @@ import UserRoleManagement from "./pages/Admin/UserRoleManagement";
 import IssueCategory from "./pages/Admin/IssueCategory";
 import DepartmentManagement from "./pages/Admin/DepartmentManagement";
 import TeamIssues from "./pages/TeamLeader/TeamIssues";
-
+import  TaskAssignment  from "./pages/Department/TaskAssignment";
 
 
 function App() {
@@ -42,7 +42,7 @@ function App() {
         <Route path="/issues-category" element={<IssueCategory/>}/>
         <Route path="/department-manage" element={<DepartmentManagement/>}/>
         <Route path="/team-issues" element={<TeamIssues/>}/>
-
+        <Route path="/task-track" element={<TaskAssignment/>}/>
 
       </Routes>
     </Router>
