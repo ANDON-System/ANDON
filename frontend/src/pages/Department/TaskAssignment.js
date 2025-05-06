@@ -17,8 +17,10 @@ import {
     AppBar,
     Box,
     Chip,
-    Divider
+    Divider,
+    useMediaQuery
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import DepartmentSidebar from '../../components/DepartmentSidebar';
 
 const TaskTracking = () => {
@@ -41,20 +43,23 @@ const TaskTracking = () => {
         setSelectedTask(null);
     };
 
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
     return (
-        <Box sx={{ display: "flex", height: "100vh", margin: 0 }}>
+        <Box sx={{ display: 'flex', height: '100vh', flexDirection: isMobile ? 'column' : 'row' }}>
             <DepartmentSidebar />
-            <Box sx={{ flexGrow: 1, padding: 0, overflow: "hidden" }}>
-                <AppBar position="static" style={{ backgroundColor: 'transparent', boxShadow: 'none' }}>
-                    <Toolbar>
-                        <Typography variant="h4" color="secondary" style={{ flexGrow: 1 }}>
+            <Box sx={{ flexGrow: 1, p: isMobile ? 2 : 3, overflowY: 'auto' }}>
+                <AppBar position="static" sx={{ backgroundColor: 'transparent', boxShadow: 'none', mb: 2 }}>
+                    <Toolbar disableGutters>
+                        <Typography variant={isMobile ? 'h5' : 'h4'} color="secondary" sx={{ flexGrow: 1 }}>
                             Task Assignment and Tracking
                         </Typography>
                     </Toolbar>
                 </AppBar>
 
-                <TableContainer component={Paper} sx={{ marginTop: 0 }}>
-                    <Table>
+                <TableContainer component={Paper} sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                    <Table stickyHeader>
                         <TableHead>
                             <TableRow>
                                 <TableCell><strong>Leader Name</strong></TableCell>
@@ -65,25 +70,27 @@ const TaskTracking = () => {
                         </TableHead>
                         <TableBody>
                             {tasks.map(task => (
-                                <TableRow key={task.id}>
+                                <TableRow key={task.id} hover>
                                     <TableCell>{task.leader}</TableCell>
-                                    <TableCell>{task.description}</TableCell>
+                                    <TableCell sx={{ wordBreak: 'break-word' }}>{task.description}</TableCell>
                                     <TableCell>
-                                        <Chip 
+                                        <Chip
                                             label={task.status}
                                             color={
                                                 task.status === 'Pending' ? 'warning' :
-                                                task.status === 'Processing' ? 'info' :
-                                                task.status === 'Resolved' ? 'success' :
-                                                'default'
+                                                    task.status === 'Processing' ? 'info' :
+                                                        task.status === 'Resolved' ? 'success' :
+                                                            'default'
                                             }
                                             variant="outlined"
+                                            size={isMobile ? 'small' : 'medium'}
                                         />
                                     </TableCell>
                                     <TableCell>
-                                        <Button 
+                                        <Button
                                             variant="contained"
                                             color="secondary"
+                                            size={isMobile ? 'small' : 'medium'}
                                             onClick={() => handleClickOpen(task)}
                                         >
                                             View Details
@@ -99,7 +106,7 @@ const TaskTracking = () => {
                     <DialogTitle>Task Details</DialogTitle>
                     <DialogContent dividers>
                         {selectedTask && (
-                            <div>
+                            <Box>
                                 <Typography gutterBottom><strong>Leader:</strong> {selectedTask.leader}</Typography>
                                 <Divider sx={{ my: 1 }} />
                                 <Typography gutterBottom><strong>Task Description:</strong> {selectedTask.description}</Typography>
@@ -109,7 +116,7 @@ const TaskTracking = () => {
                                 <Typography gutterBottom>
                                     <strong>Details:</strong> This is some dummy text providing more details about the task related to the Onboarding Management System.
                                 </Typography>
-                            </div>
+                            </Box>
                         )}
                     </DialogContent>
                     <DialogActions>
