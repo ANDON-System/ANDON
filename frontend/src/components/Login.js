@@ -41,46 +41,54 @@ function Login() {
     try {
       const { data } = await axios.get(`http://localhost:5000/api/auth/getRole/${email}`);
       setFetchedRole(data.role);
+      console.log("fetched role",fetchedRole);
+      
     } catch (err) {
       setFetchedRole("");
     }
   };
 
   const handleLogin = async () => {
-    try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/login", { email, password });
+  try {
+    const { data } = await axios.post("http://localhost:5000/api/auth/login", { email, password });
 
-      if (role !== fetchedRole) {
-        alert("Role mismatch! Please select the correct role.");
-        return;
-      }
+    const frole = data.user.role;
 
-      localStorage.setItem("token", data.token);
-
-      // Redirect based on role
-      switch (role) {
-        case "admin":
-          navigate("/admin-dashboard");
-          break;
-        case "department":
-          navigate("/department-dashboard");
-          break;
-        case "team_leader":
-          navigate("/team-leader-dashboard");
-          break;
-        case "employee":
-          navigate("/support-dashboard");
-          break;
-        case "operator":
-          navigate("/operator-dashboard");
-          break;
-        default:
-          navigate("/dashboard");
-      }
-    } catch (err) {
-      alert("Invalid credentials");
+    if (role !== frole) {
+      alert("Role mismatch! Please select the correct role.");
+      return;
     }
-  };
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("role", frole);
+    sessionStorage.setItem("department", data.user.department); // Store department in session storage
+    console.log("rolelogin", localStorage.getItem("role"));
+
+    // Redirect based on role
+    switch (role) {
+      case "admin":
+        navigate("/admin-dashboard");
+        break;
+      case "department":
+        navigate("/department-dashboard");
+        break;
+      case "team_leader":
+        navigate("/team-leader-dashboard");
+        break;
+      case "employee":
+        navigate("/support-dashboard");
+        break;
+      case "operator":
+        navigate("/operator-dashboard");
+        break;
+      default:
+        navigate("/dashboard");
+    }
+  } catch (err) {
+    alert("Invalid credentials");
+  }
+};
+
 
   return (
     <Container maxWidth="sm">

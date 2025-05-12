@@ -10,7 +10,8 @@ exports.createDepartment = async (req, res) => {
             name: req.body.name,
             manager: req.body.manager,
             email_id: req.body.email_id,
-            password: hashedPassword // Ensure the hashed password is set
+            password: hashedPassword, // Ensure the hashed password is set
+            role: req.body.role // Add role here
         });
         console.log('New Department Object:', newDepartment); // Log the new department object
         await newDepartment.save();

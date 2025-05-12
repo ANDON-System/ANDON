@@ -5,84 +5,138 @@ import {
     TableContainer, TableHead, TableRow, Paper, Button,
     Select, MenuItem, FormControl, InputLabel, Grid, Box, IconButton
 } from "@mui/material";
-import { Edit, Delete } from "@mui/icons-material"; // Import icons
+import { Edit, Delete } from "@mui/icons-material";
 import DepartmentSidebar from "../../components/DepartmentSidebar";
 
 const ManageTeamLeaders = () => {
     const [teamLeaders, setTeamLeaders] = useState([]);
-    const [users, setUsers] = useState([]);  // Fetch from backend
-    const [teams, setTeams] = useState([
-        { _id: "201", name: "Production Team" },
-        { _id: "202", name: "Quality Team" },
-        { _id: "203", name: "Manufacturing Team" },
-        { _id: "204", name: "Logistics Team" },
-        { _id: "205", name: "Safety Team" },
-        { _id: "206", name: "Maintenance Team" },
-    ]);
-    const [selectedUser, setSelectedUser] = useState("");
-    const [selectedTeam, setSelectedTeam] = useState("");
+    const [users, setUsers] = useState([]);
+    const [selectedUser , setSelectedUser ] = useState("");
     const [editingLeader, setEditingLeader] = useState(null);
-   
-    // Fetch users from the backend
+    const [departmentName, setDepartmentName] = useState("");
+
+    // Helper to parse JWT and get userId
+    const getUserIdFromToken = () => {
+        const token = localStorage.getItem("token");
+        if (!token) return null;
+        try {
+            const payloadBase64 = token.split(".")[1];
+            const payload = JSON.parse(atob(payloadBase64));
+            return payload.userId || null;
+        } catch (e) {
+            console.error("Failed to parse token", e);
+            return null;
+        }
+    };
+
+    // Fetch logged-in user's department and username from session storage
+    const loggedInDepartment = sessionStorage.getItem("department");
+    const loggedInUsername = sessionStorage.getItem("username");
+
     useEffect(() => {
         const fetchUsers = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.error("No token found");
+                window.location.href = "/login"; // Redirect to login page
+                return;
+            }
+
             try {
-                const response = await axios.get("http://localhost:5000/api/users");
-                setUsers(response.data);
+                // Fetch all users with role 'employee'
+                const response = await axios.get(`http://localhost:5000/api/users?role=employee`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                // Filter users based on the logged-in user's department and username
+                const filteredUsers = response.data.filter(user => 
+                    user.department === loggedInDepartment && user.name !== loggedInUsername
+                );
+                setUsers(filteredUsers);
             } catch (error) {
                 console.error("Error fetching users:", error);
             }
         };
+
+        const fetchTeamLeaders = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.error("No token found");
+                return; // Exit if no token
+            }
+
+            try {
+                // Fetch all users with role 'team_leader' based on department
+                const response = await axios.get(`http://localhost:5000/api/users?role=team_leader`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                // Filter team leaders based on the logged-in user's department
+                const filteredLeaders = response.data.filter(leader => leader.department === loggedInDepartment);
+                setTeamLeaders(filteredLeaders);
+            } catch (error) {
+                console.error("Error fetching team leaders:", error);
+            }
+        };
+
         fetchUsers();
-        fetchTeams();
-    }, []);
+        fetchTeamLeaders();
+    }, [loggedInDepartment, loggedInUsername]);
 
-    const fetchTeams = async () => {
+    const handleAssign = async () => {
+        if (!selectedUser ) return alert("Please select a user!");
+        const user = users.find(user => user._id === selectedUser );
+        if (!user) return alert("Invalid selection!");
+
         try {
-            const response = await axios.get("/api/teams"); // Fetch teams from backend
-            setTeams(response.data); // Set teams in state
-        } catch (error) {
-            console.error("Error fetching teams:", error);
-        }
-    };
-
-    const handleAssign = () => {
-        if (!selectedUser || !selectedTeam) return alert("Please select both user and team!");
-
-        const user = users.find(user => user._id === selectedUser);
-        const team = teams.find(team => team._id === selectedTeam);
-
-        if (!user || !team) return alert("Invalid selection!");
-
-        if (editingLeader) {
-            setTeamLeaders(prevLeaders =>
-                prevLeaders.map(leader =>
-                    leader._id === editingLeader._id
-                        ? { ...leader, name: user.name, team: team }
-                        : leader
-                )
+            const token = localStorage.getItem("token");
+            await axios.put(`http://localhost:5000/api/users/${user._id}`,
+                { role: "team_leader" },
+                { headers: { Authorization: `Bearer ${token}` } }
             );
-            setEditingLeader(null);
-            alert("Team Leader updated!");
-        } else {
-            const newLeader = { _id: Date.now().toString(), name: user.name, team };
-            setTeamLeaders(prevLeaders => [...prevLeaders, newLeader]);
-            alert("Team Leader assigned!");
+            setUsers(users.filter(u => u._id !== user._id));
+            if (editingLeader) {
+                setTeamLeaders(prevLeaders =>
+                    prevLeaders.map(leader =>
+                        leader._id === editingLeader._id ? { ...leader, name: user.name } : leader
+                    )
+                );
+                setEditingLeader(null);
+                alert("Team Leader updated!");
+            } else {
+                const newLeader = { _id: Date.now().toString(), name: user.name };
+                setTeamLeaders(prevLeaders => [...prevLeaders, newLeader]);
+                alert("Team Leader assigned!");
+            }
+            setSelectedUser ("");
+        } catch (error) {console.error("Error assigning team leader:", error);
+            alert("Failed to assign team leader.");
         }
-
-        setSelectedUser("");
-        setSelectedTeam("");
     };
 
     const handleEdit = (leader) => {
         setEditingLeader(leader);
-        setSelectedUser(users.find(user => user.name === leader.name)?._id || "");
-        setSelectedTeam(leader.team._id);
+        setSelectedUser (users.find(user => user.name === leader.name)?._id || "");
     };
 
-    const handleDelete = (leaderId) => {
-        setTeamLeaders(prevLeaders => prevLeaders.filter(leader => leader._id !== leaderId));
-        alert("Team Leader removed!");
+    const handleDelete = async (leaderId) => {
+        try {
+            const token = localStorage.getItem("token");
+            await axios.delete(`http://localhost:5000/api/users/${leaderId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setTeamLeaders(prevLeaders => prevLeaders.filter(leader => leader._id !== leaderId));
+            alert("Team Leader removed!");
+        } catch (error) {
+            console.error("Error removing team leader:", error);
+            if (error.response?.data?.message === "Token expired") {
+                alert("Your session has expired. Please log in again.");
+                localStorage.removeItem("token");
+                window.location.href = "/";
+            } else {
+                alert("Failed to remove team leader.");
+            }
+        }
     };
 
     return (
@@ -95,21 +149,10 @@ const ManageTeamLeaders = () => {
                     <Grid item xs={5}>
                         <FormControl fullWidth sx={{ backgroundColor: "#FAFAF5", borderRadius: "8px" }}>
                             <InputLabel>Select User</InputLabel>
-                            <Select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)}>
+                            <Select value={selectedUser } onChange={(e) => setSelectedUser (e.target.value)}>
                                 <MenuItem value="">Select User</MenuItem>
                                 {users.map(user => (
                                     <MenuItem key={user._id} value={user._id}>{user.name}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Grid>
-                    <Grid item xs={5}>
-                        <FormControl fullWidth sx={{ backgroundColor: "#FAFAF5", borderRadius: "8px" }}>
-                            <InputLabel>Select Team</InputLabel>
-                            <Select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)}>
-                                <MenuItem value="">Select Team</MenuItem>
-                                {teams.map(team => (
-                                    <MenuItem key={team._id} value={team._id}>{team.name}</MenuItem>
                                 ))}
                             </Select>
                         </FormControl>
@@ -126,7 +169,6 @@ const ManageTeamLeaders = () => {
                         <TableHead sx={{ backgroundColor: "#EDEAE5" }}>
                             <TableRow>
                                 <TableCell><b>Name</b></TableCell>
-                                <TableCell><b>Team</b></TableCell>
                                 <TableCell><b>Actions</b></TableCell>
                             </TableRow>
                         </TableHead>
@@ -134,7 +176,6 @@ const ManageTeamLeaders = () => {
                             {teamLeaders.map(leader => (
                                 <TableRow key={leader._id}>
                                     <TableCell>{leader.name}</TableCell>
-                                    <TableCell>{leader.team?.name || "No Team Assigned"}</TableCell>
                                     <TableCell>
                                         <IconButton color="secondary" onClick={() => handleEdit(leader)}>
                                             <Edit />

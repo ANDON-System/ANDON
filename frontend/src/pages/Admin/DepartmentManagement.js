@@ -17,7 +17,10 @@ import {
     IconButton,
     Stack,
     Typography,
-    Box
+    Box,
+    MenuItem,
+    FormControl,
+    InputLabel
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -27,21 +30,24 @@ import {
 } from '@mui/icons-material';
 import AdminSidebar from '../../components/AdminSidebar';
 
+const roles = ["admin", "department", "team_leader", "employee", "operator"];
+
 function DepartmentManagement() {
     const [departments, setDepartments] = useState([]);
     const [departmentDialog, setDepartmentDialog] = useState(false);
     const [currentItem, setCurrentItem] = useState({});
     const [isEditing, setIsEditing] = useState(false);
 
-    // Fetch departments from the backend
+    // Fetch users with role 'department' from the backend
     const fetchDepartments = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/department'); // Adjust the endpoint as necessary
+            const response = await axios.get('http://localhost:5000/api/users?role=department');
             setDepartments(response.data);
         } catch (error) {
             console.error("Error fetching departments:", error);
         }
     };
+
 
     useEffect(() => {
         fetchDepartments();
@@ -49,41 +55,44 @@ function DepartmentManagement() {
 
     const openDepartmentDialog = (department = {}) => {
         setCurrentItem(department);
-        setIsEditing(!!department._id); // Check for _id instead of id
+        setIsEditing(!!department._id);
         setDepartmentDialog(true);
     };
 
     const saveDepartment = async () => {
-        console.log("Current Item:", currentItem); // Log the current item
+        console.log("Current Item:", currentItem);
         try {
+            const dataToSend = {
+                ...currentItem,
+                role: currentItem.role // Ensure the role is included in the data being sent
+            };
+
             if (isEditing) {
-                // Update department
-                const response = await axios.put(`http://localhost:5000/api/department/${currentItem._id}`, currentItem);
-                console.log("Updated Department:", response.data);
-                setDepartments(departments.map(d => d._id === currentItem._id ? response.data : d)); // Use _id here
+                const response = await axios.put(`http://localhost:5000/api/users/${currentItem._id}`, dataToSend);
+                console.log("Updated User:", response.data);
+                setDepartments(departments.map(d => d._id === currentItem._id ? response.data : d));
             } else {
-                // Create new department
-                const response = await axios.post('http://localhost:5000/api/department', currentItem);
-                console.log("Created Department:", response.data);
+                const response = await axios.post('http://localhost:5000/api/users', dataToSend);
+                console.log("Created User:", response.data);
                 setDepartments([...departments, response.data]);
             }
             setDepartmentDialog(false);
             setCurrentItem({});
         } catch (error) {
-            console.error("Error saving department:", error.response ? error.response.data : error.message);
+            console.error("Error saving department:", error);
+            alert("Failed to save department. Please try again.");
         }
     };
 
     const deleteDepartment = async (id) => {
         try {
-            await axios.delete(`http://localhost:5000/api/department/${id}`);
-            setDepartments(departments.filter(department => department._id !== id)); // Use _id here
+            await axios.delete(`http://localhost:5000/api/users/${id}`);
+            setDepartments(departments.filter(department => department._id !== id));
         } catch (error) {
             console.error("Error deleting department:", error);
         }
     };
 
-    // Data export function
     const exportData = () => {
         const jsonString = JSON.stringify(departments, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
@@ -113,7 +122,7 @@ function DepartmentManagement() {
                         </Button>
                         <Button
                             variant="outlined"
-                            startIcon={<DownloadIcon />}
+                            start Icon={<DownloadIcon />}
                             onClick={exportData}
                         >
                             Export Departments
@@ -125,7 +134,6 @@ function DepartmentManagement() {
                         <TableHead>
                             <TableRow>
                                 <TableCell align="left">Department Name</TableCell>
-                                <TableCell align="left">Manager</TableCell>
                                 <TableCell align="left">Email ID</TableCell>
                                 <TableCell align="right">Actions</TableCell>
                             </TableRow>
@@ -134,8 +142,7 @@ function DepartmentManagement() {
                             {departments.map((department) => (
                                 <TableRow key={department._id} hover>
                                     <TableCell align="left">{department.name}</TableCell>
-                                    <TableCell align="left">{department.manager}</TableCell>
-                                    <TableCell align="left">{department.email_id}</TableCell>
+                                    <TableCell align="left">{department.email}</TableCell>
                                     <TableCell align="right">
                                         <Stack direction="row" spacing={1} justifyContent="flex-end">
                                             <IconButton size="small" onClick={() => openDepartmentDialog(department)}>
@@ -165,17 +172,10 @@ function DepartmentManagement() {
                         />
                         <TextField
                             margin="dense"
-                            label="Manager"
-                            fullWidth
-                            value={currentItem.manager || ''}
-                            onChange={(e) => setCurrentItem({ ...currentItem, manager: e.target.value })}
-                        />
-                        <TextField
-                            margin="dense"
                             label="Email ID"
                             fullWidth
-                            value={currentItem.email_id || ''}
-                            onChange={(e) => setCurrentItem({ ...currentItem, email_id: e.target.value })}
+                            value={currentItem.email || ''}
+                            onChange={(e) => setCurrentItem({ ...currentItem, email: e.target.value })}
                         />
                         <TextField
                             margin="dense"
@@ -185,6 +185,20 @@ function DepartmentManagement() {
                             value={currentItem.password || ''}
                             onChange={(e) => setCurrentItem({ ...currentItem, password: e.target.value })}
                         />
+                        <FormControl fullWidth margin="dense">
+                            <InputLabel>Role</InputLabel>
+                            <TextField
+                                select
+                                value={currentItem.role || ''}
+                                onChange={(e) => setCurrentItem({ ...currentItem, role: e.target.value })}
+                            >
+                                {roles.map((role) => (
+                                    <MenuItem key={role} value={role}>
+                                        {role}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                        </FormControl>
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => setDepartmentDialog(false)}>Cancel</Button>

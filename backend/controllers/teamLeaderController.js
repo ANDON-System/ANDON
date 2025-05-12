@@ -11,18 +11,20 @@ exports.getAllTeamLeaders = async (req, res) => {
     }
 };
 
+
 // Assign a team leader
 exports.assignTeamLeader = async (req, res) => {
-    const { userId, teamId } = req.body;
+    const { userId, teamId, departmentHeadId } = req.body; // Include departmentHeadId
     try {
         const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ message: "User not found" });
+        if (!user) return res.status(404).json({ message: "User   not found" });
 
         const team = await Team.findById(teamId);
         if (!team) return res.status(404).json({ message: "Team not found" });
 
         user.role = "team_leader";
         user.team = teamId;
+        user.department = departmentHeadId; // Set department based on department head
         await user.save();
 
         team.leader = userId;
@@ -33,6 +35,7 @@ exports.assignTeamLeader = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
+
 
 // Remove team leader role
 exports.removeTeamLeader = async (req, res) => {

@@ -21,7 +21,7 @@ const Register = () => {
   // Fetch departments from the backend
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/department"); // Adjust the endpoint as necessary
+      const response = await axios.get("http://localhost:5000/api/users?role=department"); // Adjust the endpoint as necessary
       setDepartments(response.data); // Set the fetched departments to state
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -40,15 +40,10 @@ const Register = () => {
   const handleSubmit = async () => {
     console.log("Form Data:", form); // Log form data for debugging
 
-    // Find the selected department name based on the selected department ID
-    const selectedDepartment = departments.find(dept => dept._id === form.department);
-    const departmentName = selectedDepartment ? selectedDepartment.name : "";
-
     // Create a new form data object to send to the backend
     const formData = {
       ...form,
-      department: form.department, // Keep the department ID
-      departmentName, // Add the department name to the form data
+      department: form.role === "department" ? form.department : (form.role === "employee" || form.role === "team_leader" ? form.department : ""), // Store the department name if role is department, employee, or team_leader
     };
 
     try {
@@ -118,11 +113,38 @@ const Register = () => {
               required // Make this field required
             >
               {departments.map((dept) => (
-                <MenuItem key={dept._id} value={dept._id}> {/* Assuming dept has an _id field */}
-                  {dept.name} {/* Assuming dept has a name field */}
+                <MenuItem key={dept._id} value={dept.name}> {/* Use dept.name instead of dept._id */}
+                  {dept.name} {/* Display the department name */}
                 </MenuItem>
               ))}
             </TextField>
+          )}
+
+          {form.role === "team_leader" && (
+            <TextField
+              select
+              label="Department"
+              name="department"
+              fullWidth
+              value={form.department}
+              onChange={handleChange} required // Make this field required
+            >
+              {departments.map((dept) => (
+                <MenuItem key={dept._id} value={dept.name}> {/* Use dept.name instead of dept._id */}
+                  {dept.name} {/* Display the department name */}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+
+          {form.role === "department" && (
+            <TextField
+              label="Department Name"
+              name="department"
+              fullWidth
+              onChange={handleChange}
+              required // Make this field required
+            />
           )}
 
           <Button variant="contained" onClick={handleSubmit} sx={{ mt: 2 }}>

@@ -244,7 +244,7 @@ const SupportDashboard = () => {
   return (
     <Box sx={{ display: 'flex' }}>
       <SupportSidebar />
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+      {/* <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
           <IconButton color="inherit" edge="start" onClick={toggleDrawer} sx={{ mr: 2 }}>
             <MenuIcon />
@@ -258,11 +258,12 @@ const SupportDashboard = () => {
             </Badge>
           </IconButton>
         </Toolbar>
-      </AppBar>
+      </AppBar> */}
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <Toolbar />
-
+        <Typography variant="h4" component="div" sx={{ flexGrow: 1 }}>
+            Support Team Dashboard
+          </Typography>
         <Grid container spacing={3} sx={{ mb: 3 }}>
           <Grid item xs={12} md={3}>
             <Paper elevation={3} sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: '#ffebee' }}>
