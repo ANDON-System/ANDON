@@ -104,18 +104,18 @@ const DepartmentDashboard = () => {
     const handleAssign = async (issueId) => {
         const assigneeId = selectedAssignees[issueId];
         if (!assigneeId) return alert("Please select a user before assigning.");
-
+        const assigneeUser = users.find(user => user._id === assigneeId);
+        if (!assigneeUser) return alert("Invalid selection!");
         try {
             await axios.put(`http://localhost:5000/api/issues/${issueId}/assign`, {
-                assignee: assigneeId
+                assignee: assigneeUser.name // Send the selected user's name
             }, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-
             alert("Issue assigned successfully.");
             // Refresh issue list
             const updatedIssues = data.issues.map(issue =>
-                issue._id === issueId ? { ...issue, assignee: users.find(u => u._id === assigneeId)?.name } : issue
+                issue._id === issueId ? { ...issue, assignee: assigneeUser.name } : issue
             );
             setData(prev => ({ ...prev, issues: updatedIssues }));
             setSelectedAssignees(prev => ({ ...prev, [issueId]: '' }));
@@ -124,6 +124,7 @@ const DepartmentDashboard = () => {
             alert("Failed to assign issue.");
         }
     };
+
 
     const cards = [
         { title: "Total Departments", value: data.totalDepartments, icon: <GroupsIcon />, color: blue[500] },
@@ -183,7 +184,7 @@ const DepartmentDashboard = () => {
                                         <TableCell>{issue.description}</TableCell>
                                         <TableCell>{issue.priority}</TableCell>
                                         <TableCell>{issue.status}</TableCell>
-                                        <TableCell>{issue.assignee || 'Unassigned'}</TableCell>
+                                        <TableCell>{issue.name || 'Unassigned'}</TableCell>
                                         <TableCell>{issue.sla}</TableCell>
                                         <TableCell>
                                             <Select

@@ -157,26 +157,28 @@ const OperatorDashboard = () => {
   const handleRaiseIssue = () => {
     if (issueDepartments.length > 0 && issueDescription && issueSLA > 0 && machineId && issueTitle) {
       createIssue({
-        title: issueTitle, // Include title in the issue data
+        title: issueTitle,
         priority: issuePriority,
         departments: issueDepartments,
         description: issueDescription,
-        sla: issueSLA // Include SLA in the issue data
+        sla: issueSLA,
+        name: "Unassigned" // Set default name
       });
 
       // Reset modal state
       setIssuePriority('Low');
       setIssueDepartments([]);
       setIssueDescription('');
-      setIssueSLA(0); // Reset SLA
-      setMachineId(''); // Reset Machine ID
-      setIssueTitle(''); // Reset Title
+      setIssueSLA(0);
+      setMachineId('');
+      setIssueTitle('');
       setIsIssueModalOpen(false);
     } else {
       setSnackbarMessage('Please fill all required fields.');
       setSnackbarOpen(true);
     }
-  };
+};
+
 
   const handleDepartmentToggle = (department) => {
     setIssueDepartments(prev =>

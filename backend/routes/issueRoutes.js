@@ -15,7 +15,8 @@ const {
   createOldIssue,
   getOldIssues,
   getIssueById, // Import the new function
-  getUpdatedIssues
+  getUpdatedIssues,
+  assignIssue
 } = require("../controllers/issueController");
 const authMiddleware = require("../config/authMiddleware");
 
@@ -42,5 +43,8 @@ router.get("/old/:id", getOldIssues); // Fetch old issues related to a specific 
 
 // Route to fetch an issue by ID
 router.get("/:id", getIssueById); // Ensure this route exists
+
+router.put("/:id/assign", authMiddleware("department"), assignIssue);
+
 
 module.exports = router;

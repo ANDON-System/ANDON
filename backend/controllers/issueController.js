@@ -6,15 +6,17 @@ exports.reportIssue = async (req, res) => {
   try {
       const newIssue = new Issue({
           ...req.body,
-          reportedBy: req.user.userId // Associate the issue with the logged-in user
+          reportedBy: req.user.userId, // Associate the issue with the logged-in user
+          name: "Unassigned" // Set default name
       });
       await newIssue.save();
       res.status(201).json(newIssue);
   } catch (error) {
-      console.error("Error during issue creation:", error); // Log the error for debugging
+      console.error("Error during issue creation:", error);
       res.status(500).json({ error: "Failed to create issue", details: error.message });
   }
 };
+
 
 // Get all open issues
 // Get open issues for a department
@@ -226,4 +228,22 @@ exports.getUpdatedIssues = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch in-progress issues", details: error.message });
   }
+};
+
+
+// Add this function to handle assigning an issue
+exports.assignIssue = async (req, res) => {
+    const { assignee } = req.body; // Expecting the assignee's name from the request body
+    try {
+        const updatedIssue = await Issue.findByIdAndUpdate(
+            req.params.id,
+            { name: assignee }, // Update the name field with the assignee's name
+            { new: true }
+        );
+        if (!updatedIssue) return res.status(404).json({ error: "Issue not found" });
+        res.json(updatedIssue);
+    } catch (error) {
+        console.error("Error assigning issue:", error);
+        res.status(500).json({ error: "Failed to assign issue", details: error.message });
+    }
 };
