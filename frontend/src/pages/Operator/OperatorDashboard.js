@@ -69,7 +69,7 @@ const OperatorDashboard = () => {
 
     const fetchDepartments = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/department");
+        const response = await axios.get("http://localhost:5000/api/users?role=department");
         setDepartments(response.data); // Fetch departments
       } catch (error) {
         console.error("Error fetching departments:", error);
