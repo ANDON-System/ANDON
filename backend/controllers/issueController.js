@@ -20,16 +20,25 @@ exports.reportIssue = async (req, res) => {
 
 // Get all open issues
 // Get open issues for a department
+// Get open issues for a team leader based on their name and department
 exports.getOpenIssues = async (req, res) => {
   try {
-      const { department } = req.query; // Get department from query
-      const filter = department ? { status: "Open", departments: department } : { status: "Open", reportedBy: req.user.userId }; // Filter based on department or reportedBy
+      const { name, department } = req.query; // Get name and department from query
+
+      // Create a filter object based on the presence of name and department
+      const filter = {
+          status: "Open",
+          ...(name && { name }), // Include name filter if provided
+          ...(department && { departments: department }) // Include department filter if provided
+      };
+
       const openIssues = await Issue.find(filter);
       res.json(openIssues);
   } catch (error) {
       res.status(500).json({ error: "Failed to fetch open issues", details: error.message });
   }
 };
+
 
 
 

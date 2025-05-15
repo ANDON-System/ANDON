@@ -62,6 +62,7 @@ function Login() {
     localStorage.setItem("token", data.token);
     localStorage.setItem("role", frole);
     sessionStorage.setItem("department", data.user.department); // Store department in session storage
+    sessionStorage.setItem("name", data.user.name);
     console.log("rolelogin", localStorage.getItem("role"));
 
     // Redirect based on role

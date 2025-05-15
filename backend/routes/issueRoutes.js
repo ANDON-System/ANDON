@@ -44,7 +44,7 @@ router.get("/old/:id", getOldIssues); // Fetch old issues related to a specific 
 // Route to fetch an issue by ID
 router.get("/:id", getIssueById); // Ensure this route exists
 
-router.put("/:id/assign", authMiddleware("department"), assignIssue);
+router.put("/:id/assign", authMiddleware(["department", "team_leader"]), assignIssue);
 
 
 module.exports = router;
