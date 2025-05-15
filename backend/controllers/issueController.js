@@ -241,12 +241,13 @@ exports.getUpdatedIssues = async (req, res) => {
 
 
 // Add this function to handle assigning an issue
+// issueController.js
 exports.assignIssue = async (req, res) => {
-    const { assignee } = req.body; // Expecting the assignee's name from the request body
+    const { assignee, name } = req.body; // Expecting both the assignee's ID and name from the request body
     try {
         const updatedIssue = await Issue.findByIdAndUpdate(
             req.params.id,
-            { name: assignee }, // Update the name field with the assignee's name
+            { assignee, name }, // Update both fields
             { new: true }
         );
         if (!updatedIssue) return res.status(404).json({ error: "Issue not found" });
@@ -256,3 +257,6 @@ exports.assignIssue = async (req, res) => {
         res.status(500).json({ error: "Failed to assign issue", details: error.message });
     }
 };
+
+
+

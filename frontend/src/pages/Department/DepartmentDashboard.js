@@ -118,7 +118,7 @@ const DepartmentDashboard = () => {
         if (!assigneeUser) return alert("Invalid selection!");
         try {
             await axios.put(`http://localhost:5000/api/issues/${issueId}/assign`, {
-                assignee: assigneeUser.name // Send the selected user's name
+                name: assigneeUser.name // Send the selected user's name
             }, {
                 headers: { Authorization: `Bearer ${token}` },
             });

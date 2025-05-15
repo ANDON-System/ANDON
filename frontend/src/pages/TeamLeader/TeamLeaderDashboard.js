@@ -87,28 +87,30 @@ const TeamLeaderDashboard = () => {
 
     // Assign Issue to Selected User
     const handleAssign = async (issueId) => {
-        const assigneeId = selectedAssignees[issueId];
-        if (!assigneeId) return alert("Please select a user before assigning.");
-        const assigneeUser = users.find(user => user._id === assigneeId);
-        if (!assigneeUser) return alert("Invalid selection!");
-        try {
-            await axios.put(`http://localhost:5000/api/issues/${issueId}/assign`, {
-                assignee: assigneeUser.name // Send the selected user's name
-            }, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            alert("Issue assigned successfully.");
-            // Refresh issue list
-            const updatedIssues = data.issues.map(issue =>
-                issue._id === issueId ? { ...issue, assignee: assigneeUser.name } : issue
-            );
-            setData(prev => ({ ...prev, issues: updatedIssues }));
-            setSelectedAssignees(prev => ({ ...prev, [issueId]: '' }));
-        } catch (error) {
-            console.error("Error assigning issue:", error);
-            alert("Failed to assign issue.");
-        }
-    };
+    const assigneeId = selectedAssignees[issueId];
+    if (!assigneeId) return alert("Please select a user before assigning.");
+    const assigneeUser  = users.find(user => user._id === assigneeId);
+    if (!assigneeUser ) return alert("Invalid selection!");
+    try {
+        await axios.put(`http://localhost:5000/api/issues/${issueId}/assign`, {
+            assignee: assigneeUser.name // Send the selected user's ID
+        }, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        alert("Issue assigned successfully.");
+        // Refresh issue list
+        const updatedIssues = data.issues.map(issue =>
+            issue._id === issueId ? { ...issue, assignee: assigneeUser.name } : issue
+        );
+        setData(prev => ({ ...prev, issues: updatedIssues }));
+        setSelectedAssignees(prev => ({ ...prev, [issueId]: '' }));
+    } catch (error) {
+        console.error("Error assigning issue:", error);
+        alert("Failed to assign issue.");
+    }
+};
+
+
 
 
     const cards = [
@@ -169,7 +171,7 @@ const TeamLeaderDashboard = () => {
                                         <TableCell>{issue.description}</TableCell>
                                         <TableCell>{issue.priority}</TableCell>
                                         <TableCell>{issue.status}</TableCell>
-                                        <TableCell>{issue.name || 'Unassigned'}</TableCell>
+                                        <TableCell>{issue.assignee || 'Unassigned'}</TableCell>
                                         <TableCell>{issue.sla}</TableCell>
                                         <TableCell>
                                             <Select
