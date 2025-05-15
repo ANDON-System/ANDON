@@ -141,7 +141,7 @@ const ManageTeamLeaders = () => {
 
     return (
         <Box sx={{ display: "flex", backgroundColor: "#F4F1EA", minHeight: "100vh", padding: "20px" }}>
-            <DepartmentSidebar />
+            {/* <DepartmentSidebar /> */}
             <Container>
                 <Typography variant="h4" gutterBottom color="secondary">Manage Team Leaders</Typography>
 

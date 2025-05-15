@@ -2,15 +2,20 @@ import React, { useState, useEffect } from 'react';
 import {
     Box, Typography, Grid, Paper, Avatar, Stack, Table,
     TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Select, MenuItem, Button
+    Select, MenuItem, Button, AppBar, Toolbar, IconButton,
+    Dialog, DialogContent, DialogTitle, DialogContentText, DialogActions
 } from '@mui/material';
-import DepartmentSidebar from "../../components/DepartmentSidebar";
+import CloseIcon from '@mui/icons-material/Close';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import GroupsIcon from '@mui/icons-material/Groups';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LogoutIcon from '@mui/icons-material/Logout';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { blue, green, orange, red } from "@mui/material/colors";
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import ManageTeamLeader from './ManageTeamLeader'; // Import the ManageTeamLeader component
 
 const DepartmentDashboard = () => {
     const [data, setData] = useState({
@@ -23,13 +28,17 @@ const DepartmentDashboard = () => {
 
     const [users, setUsers] = useState([]);
     const [selectedAssignees, setSelectedAssignees] = useState({});
+    const [openManageTeamLeader, setOpenManageTeamLeader] = useState(false);
+
+    const navigate = useNavigate();
 
     const loggedInDepartment = sessionStorage.getItem("department");
     const loggedInUsername = sessionStorage.getItem("username");
     const token = localStorage.getItem("token");
+    // Add this state at the top with your other state variables
+    const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
 
     // Fetch Issues
-    // Fetch Issues (Refactored like users list)
     useEffect(() => {
         const fetchIssues = async () => {
             if (!token) {
@@ -71,15 +80,10 @@ const DepartmentDashboard = () => {
             }
         };
 
-
-
         fetchIssues();
     }, [loggedInDepartment, token]);
 
-
-
-
-    // Fetch Users (Employees) from same department
+    // Fetch Users (Team Leaders) from same department
     useEffect(() => {
         const fetchUsers = async () => {
             if (!token) return console.error("No token found");
@@ -92,6 +96,12 @@ const DepartmentDashboard = () => {
                     user.department === loggedInDepartment && user.name !== loggedInUsername
                 );
                 setUsers(filteredUsers);
+
+                // Update the total team leaders count
+                setData(prev => ({
+                    ...prev,
+                    totalTeamLeaders: filteredUsers.length
+                }));
             } catch (error) {
                 console.error("Error fetching users:", error);
             }
@@ -125,6 +135,37 @@ const DepartmentDashboard = () => {
         }
     };
 
+    // Handle logout
+
+
+    // Replace your existing handleLogout with these functions
+    const handleLogoutClick = () => {
+        setOpenLogoutDialog(true);
+    };
+
+    const handleLogoutConfirm = () => {
+        setOpenLogoutDialog(false);
+        // Clear all session and local storage items
+        localStorage.removeItem("token");
+        sessionStorage.removeItem("username");
+        sessionStorage.removeItem("department");
+        sessionStorage.removeItem("role");
+
+        // Navigate to login page
+        navigate("/");
+    };
+
+    const handleLogoutCancel = () => {
+        setOpenLogoutDialog(false);
+    };
+
+
+
+
+    // Toggle ManageTeamLeader dialog
+    const toggleManageTeamLeader = () => {
+        setOpenManageTeamLeader(!openManageTeamLeader);
+    };
 
     const cards = [
         { title: "Total Departments", value: data.totalDepartments, icon: <GroupsIcon />, color: blue[500] },
@@ -134,9 +175,43 @@ const DepartmentDashboard = () => {
     ];
 
     return (
-        <Box sx={{ display: "flex", bgcolor: "#f5f7fa", minHeight: "100vh" }}>
-            <DepartmentSidebar />
-            <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "#f5f7fa", minHeight: "100vh" }}>
+            {/* AppBar */}
+            <AppBar position="static" sx={{ mb: 2 }}>
+                <Toolbar sx={{ justifyContent: "space-between" }}>
+                    <Typography variant="h6">Department Dashboard</Typography>
+                    <Box>
+                        <IconButton
+                            color="inherit"
+                            onClick={toggleManageTeamLeader}
+                            title="Manage Team Leaders"
+                        >
+                            <PeopleAltIcon />
+                        </IconButton>
+                        {/* Change your IconButton for logout to call the new function */}
+                        <IconButton
+                            color="inherit"
+                            onClick={handleLogoutClick}
+                            title="Logout"
+                        >
+                            <LogoutIcon />
+                        </IconButton><Dialog open={openLogoutDialog} onClose={handleLogoutCancel}>
+                            <DialogTitle>Confirm Logout</DialogTitle>
+                            <DialogContent>
+                                <DialogContentText>Are you sure you want to log out?</DialogContentText>
+                            </DialogContent>
+                            <DialogActions>
+                                <Button onClick={handleLogoutCancel} color="primary">Cancel</Button>
+                                <Button onClick={handleLogoutConfirm} color="error">Logout</Button>
+                            </DialogActions>
+                        </Dialog>
+
+                    </Box>
+                </Toolbar>
+            </AppBar>
+
+            {/* Main Content */}
+            <Box component="main" sx={{ flexGrow: 1, p: 3, maxWidth: "1400px", mx: "auto", width: "100%" }}>
                 <Typography variant="h4" gutterBottom fontWeight="bold" color="primary">
                     Dashboard Overview
                 </Typography>
@@ -146,7 +221,7 @@ const DepartmentDashboard = () => {
                         <Grid item xs={12} sm={6} md={3} key={index}>
                             <Paper elevation={4} sx={{
                                 p: 3, textAlign: "center", borderRadius: 4, bgcolor: "#fff",
-                                transition: "transform 0.3s", "&:hover": { transform: "scale(1.05)" }
+                                height: "100%", display: "flex", alignItems: "center", justifyContent: "center"
                             }}>
                                 <Stack spacing={2} alignItems="center">
                                     <Avatar sx={{ bgcolor: card.color, width: 56, height: 56 }}>{card.icon}</Avatar>
@@ -159,7 +234,7 @@ const DepartmentDashboard = () => {
                 </Grid>
 
                 <Typography variant="h6" sx={{ mt: 4 }}>Recent Issues</Typography>
-                <TableContainer component={Paper} sx={{ mt: 2 }}>
+                <TableContainer component={Paper} sx={{ mt: 2, overflowX: "auto" }}>
                     <Table>
                         <TableHead>
                             <TableRow>
@@ -180,39 +255,41 @@ const DepartmentDashboard = () => {
                             ) : (
                                 data.issues.map((issue) => (
                                     <TableRow key={issue._id}>
-                                        <TableCell>#{issue._id}</TableCell>
+                                        <TableCell>#{issue._id?.substring(0, 8)}</TableCell>
                                         <TableCell>{issue.description}</TableCell>
                                         <TableCell>{issue.priority}</TableCell>
                                         <TableCell>{issue.status}</TableCell>
                                         <TableCell>{issue.name || 'Unassigned'}</TableCell>
                                         <TableCell>{issue.sla}</TableCell>
                                         <TableCell>
-                                            <Select
-                                                value={selectedAssignees[issue._id] || ''}
-                                                onChange={(e) =>
-                                                    setSelectedAssignees(prev => ({
-                                                        ...prev,
-                                                        [issue._id]: e.target.value
-                                                    }))
-                                                }
-                                                displayEmpty
-                                                size="small"
-                                                sx={{ mr: 1, minWidth: 120 }}
-                                            >
-                                                <MenuItem value="">Select</MenuItem>
-                                                {users.map(user => (
-                                                    <MenuItem key={user._id} value={user._id}>
-                                                        {user.name}
-                                                    </MenuItem>
-                                                ))}
-                                            </Select>
-                                            <Button
-                                                variant="contained"
-                                                size="small"
-                                                onClick={() => handleAssign(issue._id)}
-                                            >
-                                                Assign
-                                            </Button>
+                                            <Stack direction="row" spacing={1}>
+                                                <Select
+                                                    value={selectedAssignees[issue._id] || ''}
+                                                    onChange={(e) =>
+                                                        setSelectedAssignees(prev => ({
+                                                            ...prev,
+                                                            [issue._id]: e.target.value
+                                                        }))
+                                                    }
+                                                    displayEmpty
+                                                    size="small"
+                                                    sx={{ minWidth: 120 }}
+                                                >
+                                                    <MenuItem value="">Select</MenuItem>
+                                                    {users.map(user => (
+                                                        <MenuItem key={user._id} value={user._id}>
+                                                            {user.name}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    onClick={() => handleAssign(issue._id)}
+                                                >
+                                                    Assign
+                                                </Button>
+                                            </Stack>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -221,6 +298,34 @@ const DepartmentDashboard = () => {
                     </Table>
                 </TableContainer>
             </Box>
+
+            {/* ManageTeamLeader Dialog */}
+            <Dialog
+                open={openManageTeamLeader}
+                onClose={toggleManageTeamLeader}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle>
+                    Manage Team Leaders
+                    <IconButton
+                        aria-label="close"
+                        onClick={toggleManageTeamLeader}
+                        sx={{
+                            position: 'absolute',
+                            right: 8,
+                            top: 8,
+                            color: (theme) => theme.palette.grey[500]
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    <ManageTeamLeader />
+                </DialogContent>
+            </Dialog>
+
         </Box>
     );
 };
