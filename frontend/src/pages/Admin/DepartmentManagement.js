@@ -29,16 +29,18 @@ import {
     Download as DownloadIcon,
 } from '@mui/icons-material';
 import AdminSidebar from '../../components/AdminSidebar';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const roles = ["admin", "department", "team_leader", "employee", "operator"];
 
 function DepartmentManagement() {
     const [departments, setDepartments] = useState([]);
     const [departmentDialog, setDepartmentDialog] = useState(false);
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [currentItem, setCurrentItem] = useState({});
     const [isEditing, setIsEditing] = useState(false);
 
-    // Fetch users with role 'department' from the backend
     const fetchDepartments = async () => {
         try {
             const response = await axios.get('http://localhost:5000/api/users?role=department');
@@ -47,7 +49,6 @@ function DepartmentManagement() {
             console.error("Error fetching departments:", error);
         }
     };
-
 
     useEffect(() => {
         fetchDepartments();
@@ -60,22 +61,20 @@ function DepartmentManagement() {
     };
 
     const saveDepartment = async () => {
-        console.log("Current Item:", currentItem);
         try {
             const dataToSend = {
                 ...currentItem,
-                role: currentItem.role // Ensure the role is included in the data being sent
+                role: currentItem.role
             };
 
             if (isEditing) {
                 const response = await axios.put(`http://localhost:5000/api/users/${currentItem._id}`, dataToSend);
-                console.log("Updated User:", response.data);
                 setDepartments(departments.map(d => d._id === currentItem._id ? response.data : d));
             } else {
                 const response = await axios.post('http://localhost:5000/api/users', dataToSend);
-                console.log("Created User:", response.data);
                 setDepartments([...departments, response.data]);
             }
+
             setDepartmentDialog(false);
             setCurrentItem({});
         } catch (error) {
@@ -94,16 +93,28 @@ function DepartmentManagement() {
     };
 
     const exportData = () => {
-        const jsonString = JSON.stringify(departments, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const href = URL.createObjectURL(blob);
+        const doc = new jsPDF();
+        doc.text("Departments Report", 14, 15);
 
-        const link = document.createElement('a');
-        link.href = href;
-        link.download = 'departments_export.json';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const tableColumn = ["Department Name", "Email ID"];
+        const tableRows = [];
+
+        departments.forEach(dept => {
+            const deptData = [
+                dept.name || 'N/A',
+                dept.email || 'N/A'
+            ];
+            tableRows.push(deptData);
+        });
+
+        autoTable(doc, {
+            head: [tableColumn],
+            body: tableRows,
+            startY: 20,
+            styles: { fontSize: 10 }
+        });
+
+        doc.save("departments_report.pdf");
     };
 
     return (
@@ -122,13 +133,14 @@ function DepartmentManagement() {
                         </Button>
                         <Button
                             variant="outlined"
-                            start Icon={<DownloadIcon />}
-                            onClick={exportData}
+                            startIcon={<DownloadIcon />}
+                            onClick={() => setExportDialogOpen(true)}
                         >
                             Export Departments
                         </Button>
                     </Stack>
                 </Box>
+
                 <TableContainer sx={{ maxHeight: 'calc(100vh - 220px)', overflow: 'auto' }}>
                     <Table stickyHeader>
                         <TableHead>
@@ -159,7 +171,7 @@ function DepartmentManagement() {
                     </Table>
                 </TableContainer>
 
-                {/* Department Dialog */}
+                {/* Add/Edit Department Dialog */}
                 <Dialog open={departmentDialog} onClose={() => setDepartmentDialog(false)}>
                     <DialogTitle>{isEditing ? 'Edit Department' : 'Add New Department'}</DialogTitle>
                     <DialogContent sx={{ width: { xs: '300px', sm: '400px' } }}>
@@ -203,6 +215,26 @@ function DepartmentManagement() {
                     <DialogActions>
                         <Button onClick={() => setDepartmentDialog(false)}>Cancel</Button>
                         <Button onClick={saveDepartment} variant="contained">Save</Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Export Dialog */}
+                <Dialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)}>
+                    <DialogTitle>Export Departments</DialogTitle>
+                    <DialogContent>
+                        <Typography>Would you like to download the department report as a PDF?</Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setExportDialogOpen(false)}>Cancel</Button>
+                        <Button
+                            onClick={() => {
+                                exportData();
+                                setExportDialogOpen(false);
+                            }}
+                            variant="contained"
+                        >
+                            Download
+                        </Button>
                     </DialogActions>
                 </Dialog>
             </Paper>

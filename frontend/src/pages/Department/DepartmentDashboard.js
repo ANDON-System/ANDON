@@ -29,6 +29,8 @@ const DepartmentDashboard = () => {
     const [users, setUsers] = useState([]);
     const [selectedAssignees, setSelectedAssignees] = useState({});
     const [openManageTeamLeader, setOpenManageTeamLeader] = useState(false);
+    const [assignedIssues, setAssignedIssues] = useState([]);
+
 
     const navigate = useNavigate();
 
@@ -116,24 +118,29 @@ const DepartmentDashboard = () => {
         if (!assigneeId) return alert("Please select a user before assigning.");
         const assigneeUser = users.find(user => user._id === assigneeId);
         if (!assigneeUser) return alert("Invalid selection!");
+
         try {
             await axios.put(`http://localhost:5000/api/issues/${issueId}/assign`, {
                 name: assigneeUser.name // Send the selected user's name
             }, {
                 headers: { Authorization: `Bearer ${token}` },
             });
+
             alert("Issue assigned successfully.");
-            // Refresh issue list
-            const updatedIssues = data.issues.map(issue =>
-                issue._id === issueId ? { ...issue, assignee: assigneeUser.name } : issue
-            );
+
+            // Move the issue from recent issues to assigned issues
+            const updatedIssues = data.issues.filter(issue => issue._id !== issueId);
+            const assignedIssue = data.issues.find(issue => issue._id === issueId);
+
             setData(prev => ({ ...prev, issues: updatedIssues }));
+            setAssignedIssues(prev => [...prev, { ...assignedIssue, assignee: assigneeUser.name }]);
             setSelectedAssignees(prev => ({ ...prev, [issueId]: '' }));
         } catch (error) {
             console.error("Error assigning issue:", error);
             alert("Failed to assign issue.");
         }
     };
+
 
     // Handle logout
 
@@ -297,6 +304,40 @@ const DepartmentDashboard = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
+                <Typography variant="h6" sx={{ mt: 4 }}>Assigned Issues</Typography>
+                <TableContainer component={Paper} sx={{ mt: 2, overflowX: "auto" }}>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>ID</TableCell>
+                                <TableCell>Description</TableCell>
+                                <TableCell>Priority</TableCell>
+                                <TableCell>Status</TableCell>
+                                <TableCell>Assignee</TableCell>
+                                <TableCell>SLA</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {assignedIssues.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={6} align="center">No assigned issues found.</TableCell>
+                                </TableRow>
+                            ) : (
+                                assignedIssues.map((issue) => (
+                                    <TableRow key={issue._id}>
+                                        <TableCell>#{issue._id?.substring(0, 8)}</TableCell>
+                                        <TableCell>{issue.description}</TableCell>
+                                        <TableCell>{issue.priority}</TableCell>
+                                        <TableCell>{issue.status}</TableCell>
+                                        <TableCell>{issue.assignee || 'Unassigned'}</TableCell>
+                                        <TableCell>{issue.sla}</TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+
             </Box>
 
             {/* ManageTeamLeader Dialog */}

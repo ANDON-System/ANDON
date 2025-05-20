@@ -23,15 +23,14 @@ exports.reportIssue = async (req, res) => {
 // Get open issues for a team leader based on their name and department
 exports.getOpenIssues = async (req, res) => {
   try {
-      const { name, department } = req.query; // Get name and department from query
-
-      // Create a filter object based on the presence of name and department
+      const { name, department, assignee } = req.query; // Get name, department, and assignee from query
+      // Create a filter object based on the presence of name, department, and assignee
       const filter = {
           status: "Open",
           ...(name && { name }), // Include name filter if provided
-          ...(department && { departments: department }) // Include department filter if provided
+          ...(department && { departments: department }), // Include department filter if provided
+          ...(assignee && { assignee }) // Include assignee filter if provided
       };
-
       const openIssues = await Issue.find(filter);
       res.json(openIssues);
   } catch (error) {
@@ -45,20 +44,34 @@ exports.getOpenIssues = async (req, res) => {
 // Get all resolved issues
 exports.getResolvedIssues = async (req, res) => {
   try {
-    const issues = await Issue.find({ status: 'Resolved' });
-    res.json(issues);
+      const { name, department, assignee } = req.query;
+      const filter = {
+          status: 'Resolved',
+          ...(name && { name }),
+          ...(department && { departments: department }),
+          ...(assignee && { assignee })
+      };
+      const issues = await Issue.find(filter);
+      res.json(issues);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error.message });
   }
 };
 
 // Get all acknowledged issues
 exports.getAcknowledgedIssues = async (req, res) => {
   try {
-    const acknowledgedIssues = await Issue.find({ status: "Acknowledged" });
-    res.json(acknowledgedIssues);
+      const { name, department, assignee } = req.query;
+      const filter = {
+          status: "Acknowledged",
+          ...(name && { name }),
+          ...(department && { departments: department }),
+          ...(assignee && { assignee })
+      };
+      const acknowledgedIssues = await Issue.find(filter);
+      res.json(acknowledgedIssues);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch acknowledged issues", details: error.message });
+      res.status(500).json({ error: "Failed to fetch acknowledged issues", details: error.message });
   }
 };
 
@@ -67,11 +80,11 @@ exports.updateIssueStatus = async (req, res) => {
   
   try {
     console.log("req",req.body);
-    const { status, title,description,priority,machine_id,sla,departments } = req.body; // Expecting resolution in the request body
+    const { status, title,description,priority,machine_id,sla,departments, resolution,escalationRecipient, escalationReason } = req.body; // Expecting resolution in the request body
 
     const updatedIssue = await Issue.findByIdAndUpdate(
       req.params.id,
-      { status, title,description,priority,departments,machine_id,sla }, // Update status and resolution
+      { status, title,description,priority,departments,machine_id,sla, resolution, escalationRecipient, escalationReason }, // Update status and resolution
       { new: true }
     );
     if (!updatedIssue) return res.status(404).json({ error: "Issue not found" });
@@ -124,32 +137,54 @@ exports.markAsRead = async (req, res) => {
 // Get all escalated issues
 exports.getEscalatedIssues = async (req, res) => {
   try {
-    const escalatedIssues = await Issue.find({ status: "Escalated" });
-    res.json(escalatedIssues);
+      const { name, department, assignee } = req.query;
+      const filter = {
+          status: "Escalated",
+          ...(name && { name }),
+          ...(department && { departments: department }),
+          ...(assignee && { assignee })
+      };
+      const escalatedIssues = await Issue.find(filter);
+      res.json(escalatedIssues);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch escalated issues", details: error.message });
+      res.status(500).json({ error: "Failed to fetch escalated issues", details: error.message });
   }
 };
 
 // Get all in-progress issues
 exports.getInProgressIssues = async (req, res) => {
   try {
-    const issues = await Issue.find({ status: 'In Progress' });
-    res.json(issues);
+      const { name, department, assignee } = req.query;
+      const filter = {
+          status: 'In Progress',
+          ...(name && { name }),
+          ...(department && { departments: department }),
+          ...(assignee && { assignee })
+      };
+      const issues = await Issue.find(filter);
+      res.json(issues);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch in-progress issues", details: error.message });
+      res.status(500).json({ error: "Failed to fetch in-progress issues", details: error.message });
   }
 };
 
 // Get all completed issues
 exports.getCompletedIssues = async (req, res) => {
   try {
-    const completedIssues = await Issue.find({ status: "Completed" });
-    res.json(completedIssues);
+      const { name, department, assignee } = req.query;
+      const filter = {
+          status: "Completed",
+          ...(name && { name }),
+          ...(department && { departments: department }),
+          ...(assignee && { assignee })
+      };
+      const completedIssues = await Issue.find(filter);
+      res.json(completedIssues);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch completed issues", details: error.message });
+      res.status(500).json({ error: "Failed to fetch completed issues", details: error.message });
   }
 };
+
 
 // Route to fetch old issues
 exports.getOldIssues = async (req, res) => {
@@ -208,6 +243,7 @@ exports.updateIssue = async (req, res) => {
   }
 };
 
+
 // Get issue by ID
 exports.getIssueById = async (req, res) => {
   try {
@@ -232,10 +268,17 @@ exports.createOldIssue = async (req, res) => {
 
 exports.getUpdatedIssues = async (req, res) => {
   try {
-    const issues = await Issue.find({ status: 'Updated' });
-    res.json(issues);
+      const { name, department, assignee } = req.query;
+      const filter = {
+          status: 'Updated',
+          ...(name && { name }),
+          ...(department && { departments: department }),
+          ...(assignee && { assignee })
+      };
+      const issues = await Issue.find(filter);
+      res.json(issues);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch in-progress issues", details: error.message });
+      res.status(500).json({ error: "Failed to fetch updated issues", details: error.message });
   }
 };
 
@@ -257,6 +300,5 @@ exports.assignIssue = async (req, res) => {
         res.status(500).json({ error: "Failed to assign issue", details: error.message });
     }
 };
-
 
 

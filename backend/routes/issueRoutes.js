@@ -46,5 +46,20 @@ router.get("/:id", getIssueById); // Ensure this route exists
 
 router.put("/:id/assign", authMiddleware(["department", "team_leader"]), assignIssue);
 
+// Example route for fetching acknowledged issues
+router.get('/acknowledged', authMiddleware(), async (req, res) => {
+    try {
+        const issues = await Issue.find({ status: 'Acknowledged', assignee: req.query.assignee });
+        res.json(issues);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+
+// Repeat for other statuses...
+
+
+
 
 module.exports = router;

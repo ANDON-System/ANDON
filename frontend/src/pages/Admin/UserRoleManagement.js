@@ -29,23 +29,26 @@ import {
 } from '@mui/icons-material';
 import AdminSidebar from '../../components/AdminSidebar';
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
 
 function UserRoleManagement() {
-  const [users, setUsers] = useState([]); // State to hold fetched users
+  const [users, setUsers] = useState([]);
   const [userDialog, setUserDialog] = useState(false);
   const [currentItem, setCurrentItem] = useState({});
   const [isEditing, setIsEditing] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false); // NEW
 
   // Fetch users from the backend
   const fetchUsers = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/users', {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}` // Include token if required
+          Authorization: `Bearer ${localStorage.getItem('token')}`
         }
       });
-      console.log("Fetched Users:", response.data); // Log the fetched users
-      setUsers(response.data); // Set the fetched users to state
+      setUsers(response.data);
     } catch (error) {
       console.error("Error fetching users:", error);
       alert("Failed to fetch users.");
@@ -53,74 +56,92 @@ function UserRoleManagement() {
   };
 
   useEffect(() => {
-    fetchUsers(); // Fetch users when the component mounts
+    fetchUsers();
   }, []);
 
-  // User management functions
   const openUserDialog = (user = {}) => {
     setCurrentItem(user);
-    setIsEditing(!!user._id); // Use _id for editing
+    setIsEditing(!!user._id);
     setUserDialog(true);
   };
 
-  const saveUser  = async () => {
-    if (isEditing) {
-      // Update user logic (you may want to send a PUT request to the backend)
-      await axios.put(`http://localhost:5000/api/users/${currentItem._id}`, currentItem, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const updatedUsers = users.map(u => u._id === currentItem._id ? currentItem : u);
-      setUsers(updatedUsers);
-    } else {
-      // Add new user logic (you may want to send a POST request to the backend)
-      const response = await axios.post('http://localhost:5000/api/users', currentItem, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      setUsers([...users, response.data]); // Add the newly created user to the state
-    }
-    setUserDialog(false);
-    setCurrentItem({});
-  };
-
-  const deleteUser  = async (id) => {
-    // Send a DELETE request to the backend
-    await axios.delete(`http://localhost:5000/api/users/${id}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
+  const saveUser = async () => {
+    try {
+      if (isEditing) {
+        await axios.put(`http://localhost:5000/api/users/${currentItem._id}`, currentItem, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const updatedUsers = users.map(u => u._id === currentItem._id ? currentItem : u);
+        setUsers(updatedUsers);
+      } else {
+        const response = await axios.post('http://localhost:5000/api/users', currentItem, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        setUsers([...users, response.data]);
       }
-    });
-    setUsers(users.filter(user => user._id !== id)); // Use _ id for deletion
+      setUserDialog(false);
+      setCurrentItem({});
+    } catch (error) {
+      console.error("Error saving user:", error);
+      alert("Failed to save user.");
+    }
   };
 
-  // Data export function
+  const deleteUser = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/users/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      setUsers(users.filter(user => user._id !== id));
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      alert("Failed to delete user.");
+    }
+  };
+
+  // Actual export logic
   const exportData = () => {
-    const jsonString = JSON.stringify(users, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const href = URL.createObjectURL(blob);
+  const doc = new jsPDF();
 
-    const link = document.createElement('a');
-    link.href = href;
-    link.download = 'users_export.json';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  doc.setFontSize(18);
+  doc.text('User Report', 14, 22);
+
+  const columns = ['Name', 'Email', 'Department', 'Role'];
+  const rows = users.map(user => [
+    user.name || 'N/A',
+    user.email || 'N/A',
+    user.department || 'N/A',
+    user.role || 'N/A',
+  ]);
+
+  autoTable(doc, {
+    head: [columns],
+    body: rows,
+    startY: 30,
+    styles: { fontSize: 10 },
+  });
+
+  doc.save('users_report.pdf');
+};
+
 
   return (
     <Box sx={{ display: "flex" }}>
       <AdminSidebar />
       <Paper sx={{ p: 2, width: '100%', minHeight: 'calc(100vh - 112px)' }}>
         <Box sx={{ mb: 2 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>User  & Role Management</Typography>
+          <Typography variant="h6" sx={{ mb: 2 }}>User & Role Management</Typography>
           <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
             <Button
               variant="outlined"
               startIcon={<DownloadIcon />}
-              onClick={exportData}
+              onClick={() => setExportDialogOpen(true)} // NEW
             >
               Export Users
             </Button>
@@ -148,7 +169,7 @@ function UserRoleManagement() {
                     <IconButton onClick={() => openUserDialog(user)}>
                       <EditIcon />
                     </IconButton>
-                    <IconButton onClick={() => deleteUser (user._id)}>
+                    <IconButton onClick={() => deleteUser(user._id)}>
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -157,6 +178,8 @@ function UserRoleManagement() {
             </TableBody>
           </Table>
         </TableContainer>
+
+        {/* Add / Edit User Dialog */}
         <Dialog open={userDialog} onClose={() => setUserDialog(false)}>
           <DialogTitle>{isEditing ? 'Edit User' : 'Add User'}</DialogTitle>
           <DialogContent>
@@ -198,13 +221,33 @@ function UserRoleManagement() {
                 onChange={(e) => setCurrentItem({ ...currentItem, role: e.target.value })}
               >
                 <MenuItem value="Admin">Admin</MenuItem>
-                <MenuItem value="User ">User </MenuItem>
+                <MenuItem value="User">User</MenuItem>
               </Select>
             </FormControl>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setUserDialog(false)}>Cancel</Button>
-            <Button onClick={saveUser }>{isEditing ? 'Update' : 'Add'}</Button>
+            <Button onClick={saveUser}>{isEditing ? 'Update' : 'Add'}</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Export Confirmation Dialog */}
+        <Dialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)}>
+          <DialogTitle>Export Users</DialogTitle>
+          <DialogContent>
+            <Typography>Would you like to download the user report as a PDF?</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setExportDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                exportData();
+                setExportDialogOpen(false);
+              }}
+            >
+              Download
+            </Button>
           </DialogActions>
         </Dialog>
       </Paper>
