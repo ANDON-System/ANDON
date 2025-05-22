@@ -11,6 +11,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { blue, green, orange, red } from "@mui/material/colors";
 import axios from 'axios';
+import TeamLeaderSidebar from '../../components/TeamLeaderSidebar';
 
 const TeamLeaderDashboard = () => {
     const [data, setData] = useState({
@@ -122,7 +123,7 @@ const TeamLeaderDashboard = () => {
 
     return (
         <Box sx={{ display: "flex", bgcolor: "#f5f7fa", minHeight: "100vh" }}>
-            <DepartmentSidebar />
+            <TeamLeaderSidebar />
             <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
                 <Typography variant="h4" gutterBottom fontWeight="bold" color="primary">
                     Dashboard Overview

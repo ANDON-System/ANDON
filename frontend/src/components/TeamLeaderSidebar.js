@@ -1,14 +1,22 @@
-// TeamLeaderSidebar.js
-
 import { useState } from "react";
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, Chip, Divider } from "@mui/material";
+import {
+    AppBar,
+    Toolbar,
+    IconButton,
+    Typography,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Box
+} from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
-import WarningIcon from "@mui/icons-material/Warning";
-import GroupIcon from "@mui/icons-material/Group";
-import LogoutIcon from "@mui/icons-material/Logout";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import { useNavigate } from "react-router-dom";
 
-const TeamLeaderSidebar = ({ selectedView, handleViewSelect, issues, supportTeam }) => {
+const TeamLeaderNavbar = () => {
     const navigate = useNavigate();
     const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
 
@@ -18,8 +26,8 @@ const TeamLeaderSidebar = ({ selectedView, handleViewSelect, issues, supportTeam
 
     const handleLogoutConfirm = () => {
         setOpenLogoutDialog(false);
-        localStorage.removeItem("token"); // Clear authentication token
-        navigate("/"); // Redirect to login page
+        localStorage.removeItem("token");
+        navigate("/");
     };
 
     const handleLogoutCancel = () => {
@@ -28,37 +36,19 @@ const TeamLeaderSidebar = ({ selectedView, handleViewSelect, issues, supportTeam
 
     return (
         <>
-            <Drawer variant="temporary" open={true} onClose={() => {}}>
-                <List>
-                    <ListItem button selected={selectedView === 'dashboard'} onClick={() => handleViewSelect('dashboard')}>
-                        <ListItemIcon><DashboardIcon /></ListItemIcon>
-                        <ListItemText primary="Dashboard" />
-                    </ListItem>
-                    <ListItem button selected={selectedView === 'issues'} onClick={() => handleViewSelect('issues')}>
-                        <ListItemIcon><WarningIcon /></ListItemIcon>
-                        <ListItemText primary="Issues" />
-                        <Chip 
-                            label={issues.filter(i => i.status !== 'resolved').length} 
-                            size="small" 
-                            color="error" 
-                        />
-                    </ListItem>
-                    <ListItem button selected={selectedView === 'team'} onClick={() => handleViewSelect('team')}>
-                        <ListItemIcon><GroupIcon /></ListItemIcon>
-                        <ListItemText primary="Support Team" />
-                        <Chip 
-                            label={supportTeam.length} 
-                            size="small" 
-                            color="primary" 
-                        />
-                    </ListItem>
-                    <Divider sx={{ my: 1 }} />
-                    <ListItem button onClick={handleLogoutClick}>
-                        <ListItemIcon><LogoutIcon /></ListItemIcon>
-                        <ListItemText primary="Logout" />
-                    </ListItem>
-                </List>
-            </Drawer>
+            <AppBar position="fixed" sx={{ backgroundColor: "#1976d2" }}>
+                <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <IconButton color="inherit" onClick={() => navigate("/team-leader-dashboard")}>
+                            <DashboardIcon />
+                            <Typography variant="subtitle1" sx={{ ml: 1 }}>Dashboard</Typography>
+                        </IconButton>
+                    </Box>
+                    <Button color="inherit" startIcon={<ExitToAppIcon />} onClick={handleLogoutClick}>
+                        Logout
+                    </Button>
+                </Toolbar>
+            </AppBar>
 
             {/* Logout Confirmation Dialog */}
             <Dialog open={openLogoutDialog} onClose={handleLogoutCancel}>
@@ -75,4 +65,14 @@ const TeamLeaderSidebar = ({ selectedView, handleViewSelect, issues, supportTeam
     );
 };
 
-export default TeamLeaderSidebar;
+export default TeamLeaderNavbar;
+
+
+
+
+
+
+
+
+
+
