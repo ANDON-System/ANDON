@@ -1,13 +1,22 @@
 import React, { useState } from "react";
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button } from "@mui/material";
+import {
+    AppBar,
+    Toolbar,
+    IconButton,
+    Typography,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Button,
+    Box
+} from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import PersonIcon from "@mui/icons-material/Person";
-import SettingsIcon from "@mui/icons-material/Settings";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import { useNavigate } from "react-router-dom";
 
-const SupportSidebar = () => {
+const SupportNavbar = () => {
     const navigate = useNavigate();
     const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
 
@@ -17,33 +26,42 @@ const SupportSidebar = () => {
 
     const handleLogoutConfirm = () => {
         setOpenLogoutDialog(false);
-        localStorage.removeItem("token"); // Clear authentication token
-        navigate("/"); // Redirect to login page
+        localStorage.removeItem("token");
+        navigate("/");
     };
 
     const handleLogoutCancel = () => {
         setOpenLogoutDialog(false);
     };
 
-    const menuItems = [
-        { text: "Dashboard", icon: <DashboardIcon />, path: "/support-dashboard" },
-        { text: "Issues", icon: <AssignmentIcon />, path: "/issues" },
-        { text: "My Assignments", icon: <PersonIcon />, path: "/my-assignments" },
-        { text: "Logout", icon: <ExitToAppIcon />, onClick: handleLogoutClick }
-    ];
-
     return (
         <>
-            <Drawer variant="permanent" sx={{ width: 240, flexShrink: 0, "& .MuiDrawer-paper": { width: 240, boxSizing: "border-box" } }}>
-                <List>
-                    {menuItems.map((item, index) => (
-                        <ListItem button key={index} onClick={item.onClick || (() => navigate(item.path))}>
-                            <ListItemIcon>{item.icon}</ListItemIcon>
-                            <ListItemText primary={item.text} />
-                        </ListItem>
-                    ))}
-                </List>
-            </Drawer>
+            <AppBar position="fixed" sx={{ backgroundColor: "#1976d2" }}>
+                <Toolbar>
+                    {/* Left menu item */}
+                    <IconButton
+                        color="inherit"
+                        onClick={() => navigate("/support-dashboard")}
+                        sx={{ display: "flex", flexDirection: "column", mr: 2 }}
+                    >
+                        {/* <DashboardIcon /> */}
+                        <Typography variant="h5" sx={{ mt: 0.5 }}>Support Dashboard</Typography>
+                    </IconButton>
+
+                    {/* Spacer to push logout to the right */}
+                    <Box sx={{ flexGrow: 1 }} />
+
+                    {/* Right logout button */}
+                    <IconButton
+                        color="inherit"
+                        onClick={handleLogoutClick}
+                        sx={{ display: "flex", flexDirection: "column" }}
+                    >
+                        <ExitToAppIcon />
+                        <Typography variant="caption" sx={{ mt: 0.5 }}>Logout</Typography>
+                    </IconButton>
+                </Toolbar>
+            </AppBar>
 
             {/* Logout Confirmation Dialog */}
             <Dialog open={openLogoutDialog} onClose={handleLogoutCancel}>
@@ -60,4 +78,4 @@ const SupportSidebar = () => {
     );
 };
 
-export default SupportSidebar;
+export default SupportNavbar;

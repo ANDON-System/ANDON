@@ -3,7 +3,8 @@ import {
     Box, Typography, Grid, Paper, Avatar, Stack, Table,
     TableBody, TableCell, TableContainer, TableHead, TableRow,
     Select, MenuItem, Button, AppBar, Toolbar, IconButton,
-    Dialog, DialogContent, DialogTitle, DialogContentText, DialogActions
+    Dialog, DialogContent, DialogTitle, DialogContentText, DialogActions,
+    Snackbar, Alert
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -12,9 +13,12 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
+import DownloadIcon from '@mui/icons-material/Download';
 import { blue, green, orange, red } from "@mui/material/colors";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import ManageTeamLeader from './ManageTeamLeader'; // Import the ManageTeamLeader component
 
 const DepartmentDashboard = () => {
@@ -30,15 +34,22 @@ const DepartmentDashboard = () => {
     const [selectedAssignees, setSelectedAssignees] = useState({});
     const [openManageTeamLeader, setOpenManageTeamLeader] = useState(false);
     const [assignedIssues, setAssignedIssues] = useState([]);
-
+    const [unassignedIssues, setUnassignedIssues] = useState([]); // New state for unassigned issues
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
     const navigate = useNavigate();
-
     const loggedInDepartment = sessionStorage.getItem("department");
     const loggedInUsername = sessionStorage.getItem("username");
     const token = localStorage.getItem("token");
-    // Add this state at the top with your other state variables
     const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
+
+    // Priority color mapping
+    const priorityColors = {
+        "Low": "#e8f5e9",    // Light green
+        "Medium": "#fff3e0",  // Light yellow
+        "High": "#ffebee"     // Light red
+    };
 
     // Fetch Issues
     useEffect(() => {
@@ -55,21 +66,17 @@ const DepartmentDashboard = () => {
 
             try {
                 const url = `http://localhost:5000/api/issues?department=${encodeURIComponent(loggedInDepartment)}`;
-                console.log("📡 Fetching issues from:", url);
-
                 const response = await axios.get(url, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                    headers: { Authorization: `Bearer ${token}` },
                 });
 
-                console.log("✅ Raw response:", response);
-
                 const issues = response.data || [];
-                console.log("🧾 Issues received:", issues);
-
                 const openIssuesCount = issues.filter(issue => issue.status === 'Open').length;
                 const resolvedIssuesCount = issues.filter(issue => issue.status === 'Resolved').length;
+
+                // Separate issues into assigned and unassigned
+                const assigned = issues.filter(issue => issue.name !== "Unassigned");
+                const unassigned = issues.filter(issue => issue.name === "Unassigned");
 
                 setData(prev => ({
                     ...prev,
@@ -77,6 +84,9 @@ const DepartmentDashboard = () => {
                     openIssues: openIssuesCount,
                     resolvedIssues: resolvedIssuesCount
                 }));
+
+                setAssignedIssues(assigned); // Set assigned issues
+                setUnassignedIssues(unassigned); // Set unassigned issues
             } catch (error) {
                 console.error("❌ Error fetching issues:", error?.response?.data || error.message);
             }
@@ -116,8 +126,8 @@ const DepartmentDashboard = () => {
     const handleAssign = async (issueId) => {
         const assigneeId = selectedAssignees[issueId];
         if (!assigneeId) return alert("Please select a user before assigning.");
-        const assigneeUser = users.find(user => user._id === assigneeId);
-        if (!assigneeUser) return alert("Invalid selection!");
+        const assigneeUser  = users.find(user => user._id === assigneeId);
+        if (!assigneeUser ) return alert("Invalid selection!");
 
         try {
             await axios.put(`http://localhost:5000/api/issues/${issueId}/assign`, {
@@ -126,48 +136,135 @@ const DepartmentDashboard = () => {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            alert("Issue assigned successfully.");
+            showSnackbar("Issue assigned successfully.", 'success');
 
-            // Move the issue from recent issues to assigned issues
-            const updatedIssues = data.issues.filter(issue => issue._id !== issueId);
-            const assignedIssue = data.issues.find(issue => issue._id === issueId);
+            // Move the issue from unassigned issues to assigned issues
+            const updatedUnassignedIssues = unassignedIssues.filter(issue => issue._id !== issueId);
+            const assignedIssue = unassignedIssues.find(issue => issue._id === issueId);
 
-            setData(prev => ({ ...prev, issues: updatedIssues }));
+            setUnassignedIssues(updatedUnassignedIssues);
             setAssignedIssues(prev => [...prev, { ...assignedIssue, assignee: assigneeUser.name }]);
             setSelectedAssignees(prev => ({ ...prev, [issueId]: '' }));
         } catch (error) {
             console.error("Error assigning issue:", error);
-            alert("Failed to assign issue.");
+            showSnackbar("Failed to assign issue.", 'error');
         }
     };
 
+    // Export Issues to PDF
+    const exportIssuesData = () => {
+        const allIssues = [...assignedIssues, ...unassignedIssues];
+        
+        if (allIssues.length === 0) {
+            showSnackbar('No issue data available to export.', 'info');
+            return;
+        }
+
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.text(`Issues Report - ${loggedInDepartment} Department`, 14, 22);
+        
+        // Add summary information
+        doc.setFontSize(12);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 35);
+        doc.text(`Total Issues: ${allIssues.length}`, 14, 45);
+        doc.text(`Open Issues: ${data.openIssues}`, 14, 55);
+        doc.text(`Resolved Issues: ${data.resolvedIssues}`, 14, 65);
+
+        // Prepare table data
+        const columns = ['ID', 'Description', 'Priority', 'Status', 'Assignee', 'SLA'];
+        const rows = allIssues.map((issue) => [
+            `#${issue._id?.substring(0, 8) || 'N/A'}`,
+            issue.description || 'N/A',
+            issue.priority || 'N/A',
+            issue.status || 'N/A',
+            issue.name || issue.assignee || 'Unassigned',
+            issue.sla || 'N/A',
+        ]);
+
+        autoTable(doc, {
+            head: [columns],
+            body: rows,
+            startY: 75,
+            styles: { 
+                fontSize: 9,
+                cellPadding: 3,
+            },
+            headStyles: { 
+                fillColor: [25, 118, 210],
+                textColor: 255,
+                fontStyle: 'bold'
+            },
+            alternateRowStyles: {
+                fillColor: [245, 245, 245]
+            },
+            margin: { top: 75 }
+        });
+
+        // Add separate sections for assigned and unassigned issues
+        if (unassignedIssues.length > 0) {
+            const finalY = doc.lastAutoTable.finalY || 75;
+            doc.setFontSize(14);
+            doc.text('Unassigned Issues', 14, finalY + 20);
+            
+            const unassignedRows = unassignedIssues.map((issue) => [
+                `#${issue._id?.substring(0, 8) || 'N/A'}`,
+                issue.description || 'N/A',
+                issue.priority || 'N/A',
+                issue.status || 'N/A',
+                'Unassigned',
+                issue.sla || 'N/A',
+            ]);
+
+            autoTable(doc, {
+                head: [columns],
+                body: unassignedRows,
+                startY: finalY + 30,
+                styles: { 
+                    fontSize: 9,
+                    cellPadding: 3,
+                },
+                headStyles: { 
+                    fillColor: [255, 152, 0],
+                    textColor: 255,
+                    fontStyle: 'bold'
+                },
+                alternateRowStyles: {
+                    fillColor: [255, 243, 224]
+                }
+            });
+        }
+
+        doc.save(`${loggedInDepartment}_Issues_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        showSnackbar('Issues report downloaded successfully!', 'success');
+    };
+
+    // Show snackbar messages
+    const showSnackbar = (message, severity = 'info') => {
+        setSnackbar({ open: true, message, severity });
+    };
+
+    const handleCloseSnackbar = () => {
+        setSnackbar((prev) => ({ ...prev, open: false }));
+    };
 
     // Handle logout
-
-
-    // Replace your existing handleLogout with these functions
     const handleLogoutClick = () => {
         setOpenLogoutDialog(true);
     };
 
     const handleLogoutConfirm = () => {
         setOpenLogoutDialog(false);
-        // Clear all session and local storage items
         localStorage.removeItem("token");
         sessionStorage.removeItem("username");
         sessionStorage.removeItem("department");
         sessionStorage.removeItem("role");
-
-        // Navigate to login page
         navigate("/");
     };
 
     const handleLogoutCancel = () => {
         setOpenLogoutDialog(false);
     };
-
-
-
 
     // Toggle ManageTeamLeader dialog
     const toggleManageTeamLeader = () => {
@@ -190,29 +287,25 @@ const DepartmentDashboard = () => {
                     <Box>
                         <IconButton
                             color="inherit"
+                            onClick={() => setExportDialogOpen(true)}
+                            title="Download Issues Report"
+                        >
+                            <DownloadIcon />
+                        </IconButton>
+                        <IconButton
+                            color="inherit"
                             onClick={toggleManageTeamLeader}
                             title="Manage Team Leaders"
                         >
                             <PeopleAltIcon />
                         </IconButton>
-                        {/* Change your IconButton for logout to call the new function */}
                         <IconButton
                             color="inherit"
                             onClick={handleLogoutClick}
                             title="Logout"
                         >
                             <LogoutIcon />
-                        </IconButton><Dialog open={openLogoutDialog} onClose={handleLogoutCancel}>
-                            <DialogTitle>Confirm Logout</DialogTitle>
-                            <DialogContent>
-                                <DialogContentText>Are you sure you want to log out?</DialogContentText>
-                            </DialogContent>
-                            <DialogActions>
-                                <Button onClick={handleLogoutCancel} color="primary">Cancel</Button>
-                                <Button onClick={handleLogoutConfirm} color="error">Logout</Button>
-                            </DialogActions>
-                        </Dialog>
-
+                        </IconButton>
                     </Box>
                 </Toolbar>
             </AppBar>
@@ -220,7 +313,7 @@ const DepartmentDashboard = () => {
             {/* Main Content */}
             <Box component="main" sx={{ flexGrow: 1, p: 3, maxWidth: "1400px", mx: "auto", width: "100%" }}>
                 <Typography variant="h4" gutterBottom fontWeight="bold" color="primary">
-                    Dashboard Overview
+                    
                 </Typography>
 
                 <Grid container spacing={3}>
@@ -228,7 +321,8 @@ const DepartmentDashboard = () => {
                         <Grid item xs={12} sm={6} md={3} key={index}>
                             <Paper elevation={4} sx={{
                                 p: 3, textAlign: "center", borderRadius: 4, bgcolor: "#fff",
-                                height: "100%", display: "flex", alignItems: "center", justifyContent: "center"
+                                height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
+                                transition: "transform 0.3s", "&:hover": { transform: "scale(1.05)" }
                             }}>
                                 <Stack spacing={2} alignItems="center">
                                     <Avatar sx={{ bgcolor: card.color, width: 56, height: 56 }}>{card.icon}</Avatar>
@@ -240,7 +334,7 @@ const DepartmentDashboard = () => {
                     ))}
                 </Grid>
 
-                <Typography variant="h6" sx={{ mt: 4 }}>Recent Issues</Typography>
+                <Typography variant="h6" sx={{ mt: 8 }}>Recent Issues</Typography>
                 <TableContainer component={Paper} sx={{ mt: 2, overflowX: "auto" }}>
                     <Table>
                         <TableHead>
@@ -255,18 +349,21 @@ const DepartmentDashboard = () => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {data.issues.length === 0 ? (
+                            {unassignedIssues.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} align="center">No issues found.</TableCell>
+                                    <TableCell colSpan={7} align="center">No unassigned issues found.</TableCell>
                                 </TableRow>
                             ) : (
-                                data.issues.map((issue) => (
-                                    <TableRow key={issue._id}>
+                                unassignedIssues.map((issue) => (
+                                    <TableRow 
+                                        key={issue._id}
+                                        sx={{ bgcolor: priorityColors[issue.priority] || "inherit" }}
+                                    >
                                         <TableCell>#{issue._id?.substring(0, 8)}</TableCell>
                                         <TableCell>{issue.description}</TableCell>
                                         <TableCell>{issue.priority}</TableCell>
                                         <TableCell>{issue.status}</TableCell>
-                                        <TableCell>{issue.name || 'Unassigned'}</TableCell>
+                                        <TableCell>{issue.assignee || 'Unassigned'}</TableCell>
                                         <TableCell>{issue.sla}</TableCell>
                                         <TableCell>
                                             <Stack direction="row" spacing={1}>
@@ -304,6 +401,7 @@ const DepartmentDashboard = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
+
                 <Typography variant="h6" sx={{ mt: 4 }}>Assigned Issues</Typography>
                 <TableContainer component={Paper} sx={{ mt: 2, overflowX: "auto" }}>
                     <Table>
@@ -324,12 +422,15 @@ const DepartmentDashboard = () => {
                                 </TableRow>
                             ) : (
                                 assignedIssues.map((issue) => (
-                                    <TableRow key={issue._id}>
+                                    <TableRow 
+                                        key={issue._id}
+                                        sx={{ bgcolor: priorityColors[issue.priority] || "inherit" }}
+                                    >
                                         <TableCell>#{issue._id?.substring(0, 8)}</TableCell>
                                         <TableCell>{issue.description}</TableCell>
                                         <TableCell>{issue.priority}</TableCell>
                                         <TableCell>{issue.status}</TableCell>
-                                        <TableCell>{issue.assignee || 'Unassigned'}</TableCell>
+                                        <TableCell>{issue.name || 'Unassigned'}</TableCell>
                                         <TableCell>{issue.sla}</TableCell>
                                     </TableRow>
                                 ))
@@ -339,6 +440,41 @@ const DepartmentDashboard = () => {
                 </TableContainer>
 
             </Box>
+
+            {/* Export Confirmation Dialog */}
+            <Dialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)}>
+                <DialogTitle>Export Issues Report</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Would you like to download the issues report as a PDF? This will include all assigned and unassigned issues for the {loggedInDepartment} department.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setExportDialogOpen(false)}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            exportIssuesData();
+                            setExportDialogOpen(false);
+                        }}
+                        startIcon={<DownloadIcon />}
+                    >
+                        Download PDF
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Logout Confirmation Dialog */}
+            <Dialog open={openLogoutDialog} onClose={handleLogoutCancel}>
+                <DialogTitle>Confirm Logout</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>Are you sure you want to log out?</DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleLogoutCancel} color="primary">Cancel</Button>
+                    <Button onClick={handleLogoutConfirm} color="error">Logout</Button>
+                </DialogActions>
+            </Dialog>
 
             {/* ManageTeamLeader Dialog */}
             <Dialog
@@ -366,6 +502,18 @@ const DepartmentDashboard = () => {
                     <ManageTeamLeader />
                 </DialogContent>
             </Dialog>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
 
         </Box>
     );

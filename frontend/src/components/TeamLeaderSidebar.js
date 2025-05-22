@@ -14,9 +14,10 @@ import {
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import DownloadIcon from "@mui/icons-material/Download";
 import { useNavigate } from "react-router-dom";
 
-const TeamLeaderNavbar = () => {
+const TeamLeaderSidebar = ({ onDownloadClick }) => {
     const navigate = useNavigate();
     const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
 
@@ -27,11 +28,21 @@ const TeamLeaderNavbar = () => {
     const handleLogoutConfirm = () => {
         setOpenLogoutDialog(false);
         localStorage.removeItem("token");
+        sessionStorage.removeItem("username");
+        sessionStorage.removeItem("department");
+        sessionStorage.removeItem("role");
+        sessionStorage.removeItem("name");
         navigate("/");
     };
 
     const handleLogoutCancel = () => {
         setOpenLogoutDialog(false);
+    };
+
+    const handleDownloadClick = () => {
+        if (onDownloadClick) {
+            onDownloadClick();
+        }
     };
 
     return (
@@ -44,9 +55,18 @@ const TeamLeaderNavbar = () => {
                             <Typography variant="subtitle1" sx={{ ml: 1 }}>Dashboard</Typography>
                         </IconButton>
                     </Box>
-                    <Button color="inherit" startIcon={<ExitToAppIcon />} onClick={handleLogoutClick}>
-                        Logout
-                    </Button>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <IconButton
+                            color="inherit"
+                            onClick={handleDownloadClick}
+                            title="Download Team Leader Report"
+                        >
+                            <DownloadIcon />
+                        </IconButton>
+                        <Button color="inherit" startIcon={<ExitToAppIcon />} onClick={handleLogoutClick}>
+                            Logout
+                        </Button>
+                    </Box>
                 </Toolbar>
             </AppBar>
 
@@ -65,14 +85,4 @@ const TeamLeaderNavbar = () => {
     );
 };
 
-export default TeamLeaderNavbar;
-
-
-
-
-
-
-
-
-
-
+export default TeamLeaderSidebar;
