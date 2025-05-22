@@ -119,7 +119,7 @@ function DepartmentManagement() {
 
     return (
         <Box sx={{ display: "flex" }}>
-            <AdminSidebar />
+            {/* <AdminSidebar /> */}
             <Paper sx={{ p: 2, width: '100%', minHeight: 'calc(100vh - 112px)' }}>
                 <Box sx={{ mb: 2 }}>
                     <Typography variant="h6" sx={{ mb: 2 }}>Department Management</Typography>

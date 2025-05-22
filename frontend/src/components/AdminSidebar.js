@@ -1,65 +1,164 @@
 import { useState } from "react";
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button } from "@mui/material";
+import {
+    AppBar,
+    Toolbar,
+    Typography,
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle
+} from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import AssignmentIcon from "@mui/icons-material/Assignment";
-import SettingsIcon from "@mui/icons-material/Settings";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import { useNavigate } from "react-router-dom";
+import UserManagementContent from "../pages/Admin/UserRoleManagement";
+import DepartmentManageContent from "../pages/Admin/DepartmentManagement";
+import IssueCategoryContent from "../pages/Admin/IssueCategory";
 
-const AdminSidebar = () => {
+const AdminNavbar = () => {
     const navigate = useNavigate();
+
     const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
+    const [openUserDialog, setOpenUserDialog] = useState(false);
+    const [openDeptDialog, setOpenDeptDialog] = useState(false);
+    const [openIssueDialog, setOpenIssueDialog] = useState(false);
 
-    const handleLogoutClick = () => {
-        setOpenLogoutDialog(true);
-    };
-
+    const handleLogoutClick = () => setOpenLogoutDialog(true);
     const handleLogoutConfirm = () => {
         setOpenLogoutDialog(false);
-        // Perform logout actions (e.g., clearing tokens, redirecting)
-        localStorage.removeItem("token"); // Example: Clear authentication token
-        navigate("/"); // Redirect to login page
+        localStorage.removeItem("token");
+        navigate("/");
     };
+    const handleLogoutCancel = () => setOpenLogoutDialog(false);
 
-    const handleLogoutCancel = () => {
-        setOpenLogoutDialog(false);
-    };
+    const handleUserDialogOpen = () => setOpenUserDialog(true);
+    const handleUserDialogClose = () => setOpenUserDialog(false);
+
+    const handleDeptDialogOpen = () => setOpenDeptDialog(true);
+    const handleDeptDialogClose = () => setOpenDeptDialog(false);
+
+    const handleIssueDialogOpen = () => setOpenIssueDialog(true);
+    const handleIssueDialogClose = () => setOpenIssueDialog(false);
 
     const menuItems = [
-        { text: "Dashboard", icon: <DashboardIcon />, path: "/admin-dashboard" },
-        { text: "User & Role Management", icon: <AssignmentIcon />, path: "/user-management" },
-        { text: "Issue Categories & Escalation Rules", icon: <AssignmentIcon />, path: "/issues-category" },
-        { text: "Department Management", icon: <NotificationsIcon />, path: "/department-manage" },
-        { text: "Logout", icon: <ExitToAppIcon />, onClick: handleLogoutClick }
+        { text: "User & Role Management", icon: <AssignmentIcon fontSize="small" />, onClick: handleUserDialogOpen },
+        { text: "Issue Categories", icon: <AssignmentIcon fontSize="small" />, onClick: handleIssueDialogOpen },
+        { text: "Department", icon: <NotificationsIcon fontSize="small" />, onClick: handleDeptDialogOpen },
+        { text: "Logout", icon: <ExitToAppIcon fontSize="small" />, onClick: handleLogoutClick }
     ];
+
+    const centeredDialogStyle = {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
+    };
 
     return (
         <>
-            <Drawer variant="permanent" sx={{ width: 240, flexShrink: 0, "& .MuiDrawer-paper": { width: 240, boxSizing: "border-box" } }}>
-                <List>
-                    {menuItems.map((item, index) => (
-                        <ListItem button key={index} onClick={item.onClick || (() => navigate(item.path))}>
-                            <ListItemIcon>{item.icon}</ListItemIcon>
-                            <ListItemText primary={item.text} />
-                        </ListItem>
-                    ))}
-                </List>
-            </Drawer>
+            <AppBar position="fixed" color="default" elevation={1}>
+                <Toolbar>
+                    {/* Dashboard Button on the left */}
+                    <Button
+                        startIcon={<DashboardIcon fontSize="small" />}
+                        onClick={() => navigate("/admin-dashboard")}
+                        color="primary"
+                        variant="text"
+                    >
+                        Dashboard
+                    </Button>
 
-            {/* Logout Confirmation Dialog */}
-            <Dialog open={openLogoutDialog} onClose={handleLogoutCancel}>
+                    {/* Title */}
+                    <Typography variant="h6" sx={{ flexGrow: 1, ml: 2 }}>
+                        
+                    </Typography>
+
+                    {/* Right-side buttons */}
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                        {menuItems.map((item, index) => (
+                            <Button
+                                key={index}
+                                startIcon={item.icon}
+                                onClick={item.onClick || (() => navigate(item.path))}
+                                color={item.text === "Logout" ? "error" : "primary"}
+                                variant="text"
+                            >
+                                {item.text}
+                            </Button>
+                        ))}
+                    </Box>
+                </Toolbar>
+            </AppBar>
+
+            {/* Logout Dialog */}
+            <Dialog
+                open={openLogoutDialog}
+                onClose={handleLogoutCancel}
+                PaperProps={{ sx: centeredDialogStyle }}
+            >
                 <DialogTitle>Confirm Logout</DialogTitle>
                 <DialogContent>
-                    <DialogContentText>Are you sure you want to log out?</DialogContentText>
+                    Are you sure you want to log out?
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleLogoutCancel} color="primary">Cancel</Button>
                     <Button onClick={handleLogoutConfirm} color="error">Logout</Button>
                 </DialogActions>
             </Dialog>
+
+            {/* User & Role Dialog */}
+            <Dialog
+                open={openUserDialog}
+                onClose={handleUserDialogClose}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{ sx: centeredDialogStyle }}
+            >
+                <DialogContent>
+                    <UserManagementContent />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleUserDialogClose} color="primary">Close</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Department Dialog */}
+            <Dialog
+                open={openDeptDialog}
+                onClose={handleDeptDialogClose}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{ sx: centeredDialogStyle }}
+            >
+                <DialogContent>
+                    <DepartmentManageContent />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeptDialogClose} color="primary">Close</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Issue Category Dialog */}
+            <Dialog
+                open={openIssueDialog}
+                onClose={handleIssueDialogClose}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{ sx: centeredDialogStyle }}
+            >
+                <DialogContent>
+                    <IssueCategoryContent />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleIssueDialogClose} color="primary">Close</Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 };
 
-export default AdminSidebar;
+export default AdminNavbar;

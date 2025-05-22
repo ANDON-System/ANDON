@@ -11,7 +11,7 @@ import {
   Box,
 } from "@mui/material";
 
-const roles = ["admin", "department", "team_leader", "employee", "operator"];
+const roles = ["department", "team_leader", "employee", "operator"];
 
 const Register = () => {
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "", department: "" });

@@ -56,10 +56,43 @@ router.get('/acknowledged', authMiddleware(), async (req, res) => {
     }
 });
 
+router.get('/timeline', async (req, res) => {
+  try {
+    const data = await Issue.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: new Date(new Date().setDate(new Date().getDate() - 6)) // Last 7 days
+          }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            status: "$status"
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          date: "$_id.date",
+          status: "$_id.status",
+          count: 1,
+          _id: 0
+        }
+      },
+      {
+        $sort: { date: 1 }
+      }
+    ]);
 
-// Repeat for other statuses...
-
-
-
+    res.json(data);
+  } catch (error) {
+    console.error('Aggregation error:', error);
+    res.status(500).json({ message: 'Error aggregating issue data.' });
+  }
+});
 
 module.exports = router;
