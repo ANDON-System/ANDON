@@ -37,6 +37,9 @@ const DepartmentDashboard = () => {
     const [unassignedIssues, setUnassignedIssues] = useState([]); // New state for unassigned issues
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+    const [selectedAssignedIssue, setSelectedAssignedIssue] = useState(null);
+    const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+
 
     const navigate = useNavigate();
     const loggedInDepartment = sessionStorage.getItem("department");
@@ -126,8 +129,8 @@ const DepartmentDashboard = () => {
     const handleAssign = async (issueId) => {
         const assigneeId = selectedAssignees[issueId];
         if (!assigneeId) return alert("Please select a user before assigning.");
-        const assigneeUser  = users.find(user => user._id === assigneeId);
-        if (!assigneeUser ) return alert("Invalid selection!");
+        const assigneeUser = users.find(user => user._id === assigneeId);
+        if (!assigneeUser) return alert("Invalid selection!");
 
         try {
             await axios.put(`http://localhost:5000/api/issues/${issueId}/assign`, {
@@ -154,7 +157,7 @@ const DepartmentDashboard = () => {
     // Export Issues to PDF
     const exportIssuesData = () => {
         const allIssues = [...assignedIssues, ...unassignedIssues];
-        
+
         if (allIssues.length === 0) {
             showSnackbar('No issue data available to export.', 'info');
             return;
@@ -163,7 +166,7 @@ const DepartmentDashboard = () => {
         const doc = new jsPDF();
         doc.setFontSize(18);
         doc.text(`Issues Report - ${loggedInDepartment} Department`, 14, 22);
-        
+
         // Add summary information
         doc.setFontSize(12);
         doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 35);
@@ -186,11 +189,11 @@ const DepartmentDashboard = () => {
             head: [columns],
             body: rows,
             startY: 75,
-            styles: { 
+            styles: {
                 fontSize: 9,
                 cellPadding: 3,
             },
-            headStyles: { 
+            headStyles: {
                 fillColor: [25, 118, 210],
                 textColor: 255,
                 fontStyle: 'bold'
@@ -206,7 +209,7 @@ const DepartmentDashboard = () => {
             const finalY = doc.lastAutoTable.finalY || 75;
             doc.setFontSize(14);
             doc.text('Unassigned Issues', 14, finalY + 20);
-            
+
             const unassignedRows = unassignedIssues.map((issue) => [
                 `#${issue._id?.substring(0, 8) || 'N/A'}`,
                 issue.description || 'N/A',
@@ -220,11 +223,11 @@ const DepartmentDashboard = () => {
                 head: [columns],
                 body: unassignedRows,
                 startY: finalY + 30,
-                styles: { 
+                styles: {
                     fontSize: 9,
                     cellPadding: 3,
                 },
-                headStyles: { 
+                headStyles: {
                     fillColor: [255, 152, 0],
                     textColor: 255,
                     fontStyle: 'bold'
@@ -278,6 +281,28 @@ const DepartmentDashboard = () => {
         { title: "Resolved Issues", value: data.resolvedIssues, icon: <CheckCircleIcon />, color: red[500] }
     ];
 
+    const handleViewAssignedIssueDetails = async (issue) => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.error("🔒 No token found in localStorage.");
+                return;
+            }
+
+            const response = await axios.get(`http://localhost:5000/api/issues/${issue._id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            setSelectedAssignedIssue(response.data);
+            setDetailsDialogOpen(true);
+        } catch (error) {
+            console.error("Error fetching issue details:", error);
+            alert("Failed to fetch issue details.");
+        }
+    };
+
     return (
         <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "#f5f7fa", minHeight: "100vh" }}>
             {/* AppBar */}
@@ -312,26 +337,31 @@ const DepartmentDashboard = () => {
 
             {/* Main Content */}
             <Box component="main" sx={{ flexGrow: 1, p: 3, maxWidth: "1400px", mx: "auto", width: "100%" }}>
-                <Typography variant="h4" gutterBottom fontWeight="bold" color="primary">
-                    
-                </Typography>
-
                 <Grid container spacing={3}>
-                    {cards.map((card, index) => (
-                        <Grid item xs={12} sm={6} md={3} key={index}>
-                            <Paper elevation={4} sx={{
-                                p: 3, textAlign: "center", borderRadius: 4, bgcolor: "#fff",
-                                height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-                                transition: "transform 0.3s", "&:hover": { transform: "scale(1.05)" }
-                            }}>
-                                <Stack spacing={2} alignItems="center">
-                                    <Avatar sx={{ bgcolor: card.color, width: 56, height: 56 }}>{card.icon}</Avatar>
-                                    <Typography variant="subtitle1" fontWeight="bold">{card.title}</Typography>
-                                    <Typography variant="h4" color="text.primary">{card.value}</Typography>
-                                </Stack>
-                            </Paper>
-                        </Grid>
-                    ))}
+                    <Grid item xs={12} sm={6} md={3}>
+                        <Paper elevation={3} sx={{ p: 2, bgcolor: '#ffebee', textAlign: 'center' }}>
+                            <Typography variant="h6">Total Departments</Typography>
+                            <Typography variant="h4">{data.totalDepartments}</Typography>
+                        </Paper>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                        <Paper elevation={3} sx={{ p: 2, bgcolor: '#e8f5e9', textAlign: 'center' }}>
+                            <Typography variant="h6">Total Team Leaders</Typography>
+                            <Typography variant="h4">{data.totalTeamLeaders}</Typography>
+                        </Paper>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                        <Paper elevation={3} sx={{ p: 2, bgcolor: '#fff3e0', textAlign: 'center' }}>
+                            <Typography variant="h6">Open Issues</Typography>
+                            <Typography variant="h4">{data.openIssues}</Typography>
+                        </Paper>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                        <Paper elevation={3} sx={{ p: 2, bgcolor: '#ffe0b2', textAlign: 'center' }}>
+                            <Typography variant="h6">Resolved Issues</Typography>
+                            <Typography variant="h4">{data.resolvedIssues}</Typography>
+                        </Paper>
+                    </Grid>
                 </Grid>
 
                 <Typography variant="h6" sx={{ mt: 8 }}>Recent Issues</Typography>
@@ -355,14 +385,14 @@ const DepartmentDashboard = () => {
                                 </TableRow>
                             ) : (
                                 unassignedIssues.map((issue) => (
-                                    <TableRow 
+                                    <TableRow
                                         key={issue._id}
                                         sx={{ bgcolor: priorityColors[issue.priority] || "inherit" }}
                                     >
                                         <TableCell>#{issue._id?.substring(0, 8)}</TableCell>
                                         <TableCell>{issue.description}</TableCell>
                                         <TableCell>{issue.priority}</TableCell>
-                                        <TableCell>{issue.status}</TableCell>
+                                        <TableCell>{issue.status === 'Open' ? 'New' : issue.status}</TableCell> {/* Change here */}
                                         <TableCell>{issue.assignee || 'Unassigned'}</TableCell>
                                         <TableCell>{issue.sla}</TableCell>
                                         <TableCell>
@@ -422,7 +452,7 @@ const DepartmentDashboard = () => {
                                 </TableRow>
                             ) : (
                                 assignedIssues.map((issue) => (
-                                    <TableRow 
+                                    <TableRow
                                         key={issue._id}
                                         sx={{ bgcolor: priorityColors[issue.priority] || "inherit" }}
                                     >
@@ -432,13 +462,21 @@ const DepartmentDashboard = () => {
                                         <TableCell>{issue.status}</TableCell>
                                         <TableCell>{issue.name || 'Unassigned'}</TableCell>
                                         <TableCell>{issue.sla}</TableCell>
+                                        <TableCell>
+                                            <Button
+                                                variant="contained"
+                                                size="small"
+                                                onClick={() => handleViewAssignedIssueDetails(issue)}
+                                            >
+                                                View Details
+                                            </Button>
+                                        </TableCell>
                                     </TableRow>
                                 ))
                             )}
                         </TableBody>
                     </Table>
                 </TableContainer>
-
             </Box>
 
             {/* Export Confirmation Dialog */}
@@ -501,6 +539,49 @@ const DepartmentDashboard = () => {
                 <DialogContent>
                     <ManageTeamLeader />
                 </DialogContent>
+            </Dialog>
+            <Dialog
+                open={detailsDialogOpen}
+                onClose={() => setDetailsDialogOpen(false)}
+                fullWidth
+                maxWidth="md"
+            >
+                <DialogTitle>Issue Details</DialogTitle>
+                <DialogContent>
+                    {selectedAssignedIssue ? (
+                        <TableContainer component={Paper}>
+                            <Table>
+                                <TableBody>
+                                    <TableRow>
+                                        <TableCell><strong>Issue ID</strong></TableCell>
+                                        <TableCell><strong>Description</strong></TableCell>
+                                        <TableCell><strong>Priority</strong></TableCell>
+                                        <TableCell><strong>Status</strong></TableCell>
+                                        <TableCell><strong>Assignee</strong></TableCell>
+                                        <TableCell><strong>SLA</strong></TableCell>
+                                        <TableCell><strong>Created At</strong></TableCell>
+                                        <TableCell><strong>Updated At</strong></TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableCell>#{selectedAssignedIssue._id}</TableCell>
+                                        <TableCell>{selectedAssignedIssue.description}</TableCell>
+                                        <TableCell>{selectedAssignedIssue.priority}</TableCell>
+                                        <TableCell>{selectedAssignedIssue.status}</TableCell>
+                                        <TableCell>{selectedAssignedIssue.name || 'Unassigned'}</TableCell>
+                                        <TableCell>{selectedAssignedIssue.sla}</TableCell>
+                                        <TableCell>{new Date(selectedAssignedIssue.createdAt).toLocaleString()}</TableCell>
+                                        <TableCell>{new Date(selectedAssignedIssue.updatedAt).toLocaleString()}</TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    ) : (
+                        <Typography>Loading issue details...</Typography>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDetailsDialogOpen(false)}>Close</Button>
+                </DialogActions>
             </Dialog>
 
             {/* Snackbar for notifications */}

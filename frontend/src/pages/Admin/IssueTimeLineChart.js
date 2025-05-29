@@ -17,16 +17,8 @@ import {
 } from 'recharts';
 import { format, subDays, startOfDay } from 'date-fns';
 
-const statuses = ['Open', 'Acknowledged', 'In Progress', 'Escalated', 'Resolved', 'Completed'];
-
-const issueStatusColors = [
-  '#ff9800', // Open
-  '#2196f3', // Acknowledged
-  '#3f51b5', // In Progress
-  '#f44336', // Escalated
-  '#4caf50', // Resolved
-  '#9c27b0', // Completed
-];
+const status = 'Open';
+const issueColor = '#34A85A'; // Color for Open status
 
 function IssueTimelineChart() {
   const [loading, setLoading] = useState(true);
@@ -50,37 +42,22 @@ function IssueTimelineChart() {
       if (!token) throw new Error("Authentication token not found.");
 
       const headers = { Authorization: `Bearer ${token}` };
-      const issuesData = {};
+      const response = await fetch(`http://localhost:5000/api/issues?status=${status}`, { headers });
+      if (!response.ok) throw new Error(`Failed to fetch issues for ${status}`);
+      const issues = await response.json();
 
-      // Fetch separately for each status
-      await Promise.all(statuses.map(async (status) => {
-        const response = await fetch(`http://localhost:5000/api/issues?status=${status}`, { headers });
-        if (!response.ok) throw new Error(`Failed to fetch issues for ${status}`);
-        const data = await response.json();
-        issuesData[status] = data;
-      }));
-
-      // Process per day per status
       const processedData = dates.map((date) => {
         const dateStr = format(date, 'yyyy-MM-dd');
         const displayDate = format(date, 'EEE, MMM d');
 
-        const statusCounts = {};
-
-        statuses.forEach((status) => {
-          const issues = issuesData[status] || [];
-
-          const count = issues.filter(issue => {
-            const issueDate = format(new Date(issue.createdAt), 'yyyy-MM-dd');
-            return issueDate === dateStr;
-          }).length;
-
-          statusCounts[status.toLowerCase()] = count;
-        });
+        const count = issues.filter(issue => {
+          const issueDate = format(new Date(issue.createdAt), 'yyyy-MM-dd');
+          return issueDate === dateStr;
+        }).length;
 
         return {
           date: displayDate,
-          ...statusCounts
+          open: count
         };
       });
 
@@ -112,7 +89,7 @@ function IssueTimelineChart() {
   return (
     <Paper elevation={8} sx={{ p: 4, borderRadius: '10px', height: '400px' }}>
       <Typography variant="h6" gutterBottom align="center" sx={{ fontWeight: 'bold', color: '#333', mb: 2 }}>
-        Issue Status Timeline (Last 7 Days)
+        Open Issues Timeline (Last 7 Days)
       </Typography>
 
       <ResponsiveContainer width="100%" height={320}>
@@ -138,15 +115,12 @@ function IssueTimelineChart() {
             }}
           />
           <Legend wrapperStyle={{ paddingTop: 10 }} />
-          {statuses.map((status, index) => (
-            <Bar
-              key={status}
-              dataKey={status.toLowerCase()}
-              name={status}
-              fill={issueStatusColors[index]}
-              radius={[4, 4, 0, 0]}
-            />
-          ))}
+          <Bar
+            dataKey="open"
+            name="Open"
+            fill={issueColor}
+            radius={[4, 4, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
     </Paper>

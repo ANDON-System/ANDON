@@ -52,7 +52,7 @@ const TeamLeaderSidebar = ({ onDownloadClick }) => {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         <IconButton color="inherit" onClick={() => navigate("/team-leader-dashboard")}>
                             <DashboardIcon />
-                            <Typography variant="subtitle1" sx={{ ml: 1 }}>Dashboard</Typography>
+                            <Typography variant="subtitle1" sx={{ ml: 1 }}>Team Leader Dashboard</Typography>
                         </IconButton>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

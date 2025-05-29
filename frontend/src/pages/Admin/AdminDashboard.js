@@ -294,6 +294,7 @@ function AdminDashboard() {
         </Grid>
 
         {/* Pie Charts */}
+        {/* Uncomment the following section if you want to include pie charts */}
         {/* <Grid container spacing={3} sx={{ mt: 4 }}>
           <Grid item xs={12} md={6}>
             <Typography variant="h6" sx={{ mb: 2 }}>Issues Status Distribution</Typography>

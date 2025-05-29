@@ -80,11 +80,11 @@ exports.updateIssueStatus = async (req, res) => {
   
   try {
     console.log("req",req.body);
-    const { status, title,description,priority,machine_id,sla,departments, resolution,escalationRecipient, escalationReason } = req.body; // Expecting resolution in the request body
+    const { status, title,description,priority,machine_id,sla,departments, resolution,escalationRecipient, escalationReason,assignee,name } = req.body; // Expecting resolution in the request body
 
     const updatedIssue = await Issue.findByIdAndUpdate(
       req.params.id,
-      { status, title,description,priority,departments,machine_id,sla, resolution, escalationRecipient, escalationReason }, // Update status and resolution
+      { status, title,description,priority,departments,machine_id,sla, resolution, escalationRecipient, escalationReason,assignee,name }, // Update status and resolution
       { new: true }
     );
     if (!updatedIssue) return res.status(404).json({ error: "Issue not found" });

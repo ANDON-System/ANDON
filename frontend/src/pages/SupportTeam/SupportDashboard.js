@@ -41,6 +41,8 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import SearchIcon from '@mui/icons-material/Search';
 import SupportSidebar from "../../components/SupportSidebar";
 import axios from 'axios'; // Import axios for making HTTP requests
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const SupportDashboard = () => {
     // State
@@ -65,6 +67,7 @@ const SupportDashboard = () => {
     const [slaAtRiskCount, setSlaAtRiskCount] = useState(0);
     const [acknowledgedCount, setAcknowledgedCount] = useState(0);
     const [escalatedCount, setEscalatedCount] = useState(0);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
     // Current active tab for filtering
     const [activeTab, setActiveTab] = useState('all');
@@ -269,34 +272,34 @@ const SupportDashboard = () => {
 
     // Handle Resolve button click
     const handleResolveIssue = async () => {
-    if (selectedIssue && resolutionDescription) {
-        try {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                console.error("🔒 No token found in localStorage.");
-                return;
-            }
-
-            const response = await axios.put(`http://localhost:5000/api/issues/${selectedIssue._id}`, {
-                status: 'Resolved',
-                resolution: resolutionDescription // Ensure this field is included
-            }, {
-                headers: {
-                    Authorization: `Bearer ${token}`
+        if (selectedIssue && resolutionDescription) {
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    console.error("🔒 No token found in localStorage.");
+                    return;
                 }
-            });
 
-            console.log("Updated Issue:", response.data); // Log the updated issue
-            await fetchIssues(); // Refresh the issues
-            alert(`Issue #${selectedIssue._id} has been resolved.`);
-            setDialogOpen(false);
-            setResolutionDescription(''); // Reset resolution description
-        } catch (error) {
-            console.error("Error resolving issue:", error);
-            alert("Failed to resolve issue.");
+                const response = await axios.put(`http://localhost:5000/api/issues/${selectedIssue._id}`, {
+                    status: 'Resolved',
+                    resolution: resolutionDescription // Ensure this field is included
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                console.log("Updated Issue:", response.data); // Log the updated issue
+                await fetchIssues(); // Refresh the issues
+                alert(`Issue #${selectedIssue._id} has been resolved.`);
+                setDialogOpen(false);
+                setResolutionDescription(''); // Reset resolution description
+            } catch (error) {
+                console.error("Error resolving issue:", error);
+                alert("Failed to resolve issue.");
+            }
         }
-    }
-};
+    };
 
 
     // Handle Mark as Read button click
@@ -330,6 +333,7 @@ const SupportDashboard = () => {
     };
 
     // Handle Escalate button click
+    // Handle Escalate button click
     const handleEscalateIssue = async () => {
         if (selectedIssue && escalationRecipient && escalationReason) {
             try {
@@ -338,20 +342,19 @@ const SupportDashboard = () => {
                     console.error("🔒 No token found in localStorage.");
                     return;
                 }
-
                 await axios.put(`http://localhost:5000/api/issues/${selectedIssue._id}`, {
-                    status: 'Escalated',
+                    status: 'Open',  // Change status to 'Open'
                     escalationRecipient: escalationRecipient,
-                    escalationReason: escalationReason
+                    escalationReason: escalationReason,
+                    assignee: 'Unassigned', // Change assignee to "Unassigned"
+                    name: 'Unassigned' // Change name to "Unassigned"
                 }, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
                 });
-
-                // Update local state and refresh
-                await fetchIssues();
-                alert(`Issue #${selectedIssue._id} has been escalated.`);
+                await fetchIssues(); // Refresh the issues
+                alert(`Issue #${selectedIssue._id} has been escalated to Open status.`);
                 setEscalateDialogOpen(false);
                 setEscalationRecipient('');
                 setEscalationReason('');
@@ -361,6 +364,7 @@ const SupportDashboard = () => {
             }
         }
     };
+
 
     // Handle View Details button click
     const handleViewDetails = async (issue) => {
@@ -392,9 +396,57 @@ const SupportDashboard = () => {
         }
     };
 
+    const exportSupportReport = () => {
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.text(`Support Issues Report`, 14, 22);
+
+        // Prepare table data for all issues
+        const columns = ['ID', 'Description', 'Priority', 'Status', 'Assignee', 'SLA'];
+        const rows = issues.map((issue) => [
+            `#${issue._id}`,
+            issue.description || 'N/A',
+            issue.priority || 'N/A',
+            issue.status || 'N/A',
+            issue.assignee || 'Unassigned',
+            issue.sla || 'N/A',
+        ]);
+
+        autoTable(doc, {
+            head: [columns],
+            body: rows,
+            startY: 30,
+            styles: {
+                fontSize: 9,
+                cellPadding: 3,
+            },
+            headStyles: {
+                fillColor: [25, 118, 210],
+                textColor: 255,
+                fontStyle: 'bold'
+            },
+            alternateRowStyles: {
+                fillColor: [245, 245, 245]
+            },
+            margin: { top: 30 }
+        });
+
+        doc.save(`Support_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        showSnackbar('Support report downloaded successfully!', 'success');
+    };
+
+     // Show snackbar messages
+    const showSnackbar = (message, severity = 'info') => {
+        setSnackbar({ open: true, message, severity });
+    };
+
+    const handleDownloadFromSidebar = () => {
+        exportSupportReport();
+    };
+
     return (
         <Box sx={{ display: 'flex' }}>
-            <SupportSidebar />
+            <SupportSidebar onDownloadClick={handleDownloadFromSidebar} />
             <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
                 <Typography variant="h4" component="div" sx={{ mb: 3 }}>
                     Support Team Dashboard
