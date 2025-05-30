@@ -75,6 +75,9 @@ function AdminDashboard() {
         const deptRes = await axios.get('http://localhost:5000/api/users?role=department', { headers });
         setDepartments(deptRes.data);
 
+        const teamRes = await axios.get('http://localhost:5000/api/users?role=department', { headers });
+        setDepartments(teamRes.data);
+
         // Fetch issue counts by status
         const statuses = ['open', 'acknowledged', 'in-progress', 'escalated', 'resolved', 'completed'];
         const issueCounts = {};
@@ -215,7 +218,7 @@ function AdminDashboard() {
           <Grid item xs={12} sm={6} md={3}>
             <Paper sx={{ p: 2, textAlign: 'center', backgroundColor: statColors[3] }}>
               <Typography variant="h6" sx={{ color: '#fff' }}>Team Leaders</Typography>
-              <Typography variant="h4" sx={{ color: '#fff' }}>{users.filter(u => u.role === 'Manager').length}</Typography>
+              <Typography variant="h4" sx={{ color: '#fff' }}>{users.filter(u => u.role === 'team_leader').length}</Typography>
             </Paper>
           </Grid>
         </Grid>
